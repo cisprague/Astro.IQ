@@ -22,6 +22,8 @@ This library aims to implement various *machine learning* and *computational int
 - [ ] Recurrent Networks
 - [ ] Deep-Q Learning <b id="ml1">(Mnih et al.)</b>
 - [ ] Guided Policy Search <b id="ml2">(Levine et al.)</b>
+- [ ] Evolutionary Neurocontrol <b id="ml3">(Dachwald)</b>
+
 
 #### Definitions
 <b id="f1">(1)</b> A type of artificial intelligence (AI) that provides computers with the ability to learn without being explicitly programmed.  
@@ -31,4 +33,5 @@ This library aims to implement various *machine learning* and *computational int
  <b id="r1">(Yam et al.)</b> Yam, C. H., Izzo, D., & Biscani, F. (2010). Towards a High Fidelity Direct Transcription Method for Optimisation of Low-Thrust Trajectories. 4th International Conference on Astrodynamics Tools and Techniques, 1–7. Retrieved from http://arxiv.org/abs/1004.4539  
 <b id="r2">(Sims et al.)</b> Sims, J. A., & Flanagan, S. N. (1997). Preliminary Design of Low-Thrust Interplanetary Missions.  
 <b id="ml1">(Mnih et al.)</b> Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., Veness, J., Bellemare, M. G., ... & Petersen, S. (2015). Human-level control through deep reinforcement learning. Nature, 518(7540), 529-533.  
-<b id="ml2">(Levine et al.)</b> Levine, S., & Koltun, V. (2013). Guided Policy Search. In ICML (3) (pp. 1-9).
+<b id="ml2">(Levine et al.)</b> Levine, S., & Koltun, V. (2013). Guided Policy Search. In ICML (3) (pp. 1-9).  
+<b id="ml3">(Dachwald)</b> Dachwald, B. (2005). Optimization of very-low-thrust trajectories using evolutionary neurocontrol. Acta Astronautica, 57(2), 175-185.  
