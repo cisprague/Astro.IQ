@@ -1,5 +1,5 @@
 # Astro.IQ
-Machine Learning<sup id="a1">1</sup> + Spacecraft Trajectory Optimisation<sup id="a2">2</sup>
+Machine Learning<sup id="a1">(1)</sup> + Spacecraft Trajectory Optimisation<sup id="a2">(2)</sup>
 
 ## Inspiration
 A housefly is a rather simple organism, yet it is able to independently make decisions to achieve its goals, such as navigating to a food-source and avoiding obstacles. Inspecting closer, a housefly is able to make these decisions instantaneously, such as in the case of being swatted at by a human. If one thinks about the descent of a lander onto the Martian surface, the nature of the situation is quite the same. Because communication with Earth is prolonged, the lander must make decisions on its own in order to safely land on the surface. If a common housefly can independently make decisions in real-time, in uncertain dynamic environments, than surely a spacecraft should be able to do the same in an environment where the objective is clearly outlined.
@@ -24,8 +24,8 @@ This library aims to implement various *machine learning* and *computational int
 - [ ] Guided Policy Search <b id="ml2">(Levine et al.)</b>
 
 #### Footnotes
-<b id="f1">1</b> A type of artificial intelligence (AI) that provides computers with the ability to learn without being explicitly programmed.  
-<b id="f2">2</b> An especially complicated continuous optimisation problem, which is characterised by: 1) nonlinear dynamics, 2) many practical trajectories and state variable discontinuities, 3) inexplicit terminal conditions (e.g. departure and arrival planet positions), 4) time-dependant influences (i.e. from planet positions determined from ephemerides), 5) apriori unknown basic optimal trajectory structure.  
+<b id="f1">(1)</b> A type of artificial intelligence (AI) that provides computers with the ability to learn without being explicitly programmed.  
+<b id="f2">(2)</b> An especially complicated continuous optimisation problem, which is characterised by: 1) nonlinear dynamics, 2) many practical trajectories and state variable discontinuities, 3) inexplicit terminal conditions (e.g. departure and arrival planet positions), 4) time-dependant influences (i.e. from planet positions determined from ephemerides), 5) apriori unknown basic optimal trajectory structure.  
 
 #### References
  <b id="r1">(Yam et al.)</b> Yam, C. H., Izzo, D., & Biscani, F. (2010). Towards a High Fidelity Direct Transcription Method for Optimisation of Low-Thrust Trajectories. 4th International Conference on Astrodynamics Tools and Techniques, 1–7. Retrieved from http://arxiv.org/abs/1004.4539  
