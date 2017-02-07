@@ -23,7 +23,7 @@ markdown:           kramdown
 # Navigation
 nav:
   - name:           "About"
-    href:           "/about"
+    href:           "/astro.iq/about"
   - name:           "Download"
     href:           "https://github.com/cisprague/astro.iq"
 
