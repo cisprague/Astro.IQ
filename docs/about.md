@@ -1,6 +1,6 @@
 ---
 title: About
-permalink: /astro.iq/about
+permalink: /Astro.IQ/about
 ---
 
 Machine Learning<sup id="a1">(1)</sup> + Spacecraft Trajectory Optimisation<sup id="a2">(2)</sup>
