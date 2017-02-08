@@ -12,16 +12,49 @@
 <meta property="og:title" content="404 Not Found" />
 <meta name="description" content="Machine Learning + Trajectory Optimisation" />
 <meta property="og:description" content="Machine Learning + Trajectory Optimisation" />
-<link rel="canonical" href="http://localhost:4000/Astro.IQ/404.html" />
-<meta property="og:url" content="http://localhost:4000/Astro.IQ/404.html" />
+<link rel="canonical" href="https://cisprague.github.io/Astro.IQ/404.html" />
+<meta property="og:url" content="https://cisprague.github.io/Astro.IQ/404.html" />
 <meta property="og:site_name" content="Astro.IQ" />
 <script type="application/ld+json">
 {"@context": "http://schema.org",
 "@type": "WebPage",
 "headline": "404 Not Found",
 "description": "Machine Learning + Trajectory Optimisation",
-"url": "http://localhost:4000/Astro.IQ/404.html"}</script>
+"url": "https://cisprague.github.io/Astro.IQ/404.html"}</script>
 <!-- End Jekyll SEO tag -->
+
+
+  <!--Google Analytics-->
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-81308018-1', 'auto');
+    ga('send', 'pageview');
+    $("script[type='math/tex']").replaceWith(
+      function(){
+        var tex = $(this).text();
+        return "<span class=\"inline-equation\">" +
+               katex.renderToString(tex) +
+               "</span>";
+    });
+    $("script[type='math/tex; mode=display']").replaceWith(
+      function(){
+        var tex = $(this).text();
+        return "<div class=\"equation\">" +
+               katex.renderToString("\\displaystyle "+tex) +
+               "</div>";
+    });
+  </script>
+
+<!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.1.1/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.1.1/katex.min.js"></script>
+  
 
 </head>
 <body>

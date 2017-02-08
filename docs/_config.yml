@@ -1,10 +1,7 @@
-# # # # # # # #
-#   K i k o   #
-# # # # # # # #
-
 # Basic
 name:               "Astro.IQ"
 description:        "Machine Learning + Trajectory Optimisation"
+google_analytics:   "UA-81308018-1"
 
 # jekyll-seo-tag, see: http://www.rubydoc.info/gems/jekyll-seo-tag/1.2.0
 url:                "https://cisprague.github.io"
