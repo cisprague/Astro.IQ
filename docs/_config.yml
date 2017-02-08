@@ -7,7 +7,7 @@ name:               "Astro.IQ"
 description:        "Machine Learning + Trajectory Optimisation"
 
 # jekyll-seo-tag, see: http://www.rubydoc.info/gems/jekyll-seo-tag/1.2.0
-url:                "/astro.iq"
+url:                "//cisprague.github.io/Astro.IQ"
 author:             "Christopher Iliffe Sprague"
 github:
   username:         "cisprague"
@@ -23,7 +23,7 @@ markdown:           kramdown
 # Navigation
 nav:
   - name:           "About"
-    href:           "/Astro.IQ/about"
+    href:           "//cisprague.github.io/Astro.IQ/about"
   - name:           "Download"
     href:           "https://github.com/cisprague/astro.iq"
 
