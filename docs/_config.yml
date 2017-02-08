@@ -23,9 +23,11 @@ markdown:           kramdown
 # Navigation
 nav:
   - name:           "About"
-    href:           "//cisprague.github.io/Astro.IQ/about"
+    href:           "/about"
   - name:           "Download"
     href:           "https://github.com/cisprague/astro.iq"
+  - name:           "Tutorial"
+    href:           "/tutorial"
 
 # Sass
 sass:

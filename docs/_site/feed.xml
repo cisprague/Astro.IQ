@@ -2,20 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
 	<channel>
 		<title>Astro.IQ</title>
-		<link>//cisprague.github.io/Astro.IQ</link>
-		<atom:link href="//cisprague.github.io/Astro.IQ/feed.xml" rel="self" type="application/rss+xml" />
+		<link>http://localhost:4000</link>
+		<atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
 		
 			<item>
-				<title>Landing Rocket with Deep Reinforcement Learning</title>
+				<title>Landing Rockets with Deep Reinforcement Learning</title>
         <description>&lt;p&gt;While rocket landing problems are typically solved through conventional trajectory optimization techniques combined with heuristic control, recent developments in deep learning suggest that neural networks are able to approximate the Hamilton-Jacobi-Bellman equation and control spacecraft optimally in real-time with spatial generalization.&lt;/p&gt;
 
-&lt;div class=&quot;sl-block-content&quot; style=&quot;z-index: 11;&quot;&gt;
-&lt;iframe src=&quot;//slides.com/christopheriliffesprague/deck/embed&quot; width=&quot;800&quot; height=&quot;500&quot; scrolling=&quot;no&quot; frameborder=&quot;0&quot; webkitallowfullscreen=&quot;&quot; mozallowfullscreen=&quot;&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
-&lt;/div&gt;
+&lt;iframe src=&quot;//slides.com/christopheriliffesprague/deck/embed&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot; class=&quot;video&quot;&gt;&lt;/iframe&gt;
 </description>
 				<pubDate>Fri, 20 Jan 2017 00:00:00 -0600</pubDate>
-				<link>//cisprague.github.io/Astro.IQ/2017/01/20/Deep-Learning-for-Rocket-Landings/</link>
-				<guid isPermaLink="true">//cisprague.github.io/Astro.IQ/2017/01/20/Deep-Learning-for-Rocket-Landings/</guid>
+				<link>http://localhost:4000/2017/01/20/Deep-Learning-for-Rocket-Landings/</link>
+				<guid isPermaLink="true">http://localhost:4000/2017/01/20/Deep-Learning-for-Rocket-Landings/</guid>
 			</item>
 		
 	</channel>

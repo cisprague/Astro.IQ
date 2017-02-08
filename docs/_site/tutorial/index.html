@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tutorial</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Sans+Pro:300,300i,600">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="alternate" type="application/rss+xml" title="RSS Feed for Astro.IQ" href="/feed.xml" />
+  <!-- Begin Jekyll SEO tag v2.1.0 -->
+<title>Tutorial - Astro.IQ</title>
+<meta property="og:title" content="Tutorial" />
+<meta name="description" content="Machine Learning + Trajectory Optimisation" />
+<meta property="og:description" content="Machine Learning + Trajectory Optimisation" />
+<link rel="canonical" href="http://localhost:4000/tutorial/" />
+<meta property="og:url" content="http://localhost:4000/tutorial/" />
+<meta property="og:site_name" content="Astro.IQ" />
+<script type="application/ld+json">
+{"@context": "http://schema.org",
+"@type": "WebPage",
+"headline": "Tutorial",
+"description": "Machine Learning + Trajectory Optimisation",
+"url": "http://localhost:4000/tutorial/"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+<body>
+  <div class="container">
+    <header class="masthead">
+  <h1 class="masthead-title--small">
+    <a href="/">Astro.IQ</a>
+  </h1>
+</header>
+<div class="content page">
+  <h1 class="page-title">Tutorial</h1>
+  <h2 id="its-as-easy-as-this">It’s as easy as this</h2>
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="c">#Import the necessary modules</span>
+<span class="kn">from</span> <span class="nn">context</span> <span class="kn">import</span> <span class="n">Massive_Body</span>
+<span class="c">#Instantiate Earth as a massive celestial object</span>
+<span class="n">Earth</span> <span class="o">=</span> <span class="n">Celestial_Body</span><span class="p">(</span><span class="s">'Earth'</span><span class="p">)</span>
+<span class="c">#Instantiate Mars as a massive celestial object</span>
+<span class="n">Mars</span> <span class="o">=</span> <span class="n">Celestial_Body</span><span class="p">(</span><span class="s">'Mars'</span><span class="p">)</span>
+<span class="c">#Instantiate the debris fragment as an orbital body</span>
+<span class="n">Sat</span> <span class="o">=</span> <span class="n">Earth</span><span class="o">.</span><span class="n">Satellites</span><span class="o">.</span><span class="n">Fengyun_1C</span><span class="o">.</span><span class="n">Fengyun_1C_Deb_102</span>
+<span class="c">#Times at which to compute position and velocity</span>
+<span class="n">times</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2457061.5</span><span class="p">,</span> <span class="mf">2457062.5</span><span class="p">,</span> <span class="mf">2457063.5</span><span class="p">,</span> <span class="mf">2457064.5</span><span class="p">]</span>
+<span class="c">#Compute the position and velocity of the debris</span>
+<span class="c">#fragment with respect to the centre of Mars.</span>
+<span class="n">p</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">Sat</span><span class="o">.</span><span class="n">Position_and_Velocity_WRT</span><span class="p">(</span><span class="n">Mars</span><span class="p">,</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="c">#Show results</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'The position [km] and velocity [km/s] of'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Fengyun_1C_Deb_102 with respect to the centre of Mars:'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Position:'</span><span class="p">),</span> <span class="n">p</span> <span class="o">*</span> <span class="mf">1e-3</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Velocity: '</span><span class="p">),</span> <span class="n">v</span> <span class="o">*</span> <span class="mf">1e-3</span>
+</code></pre>
+</div>
+<div class="highlighter-rouge"><pre class="highlight"><code>The position [km] and velocity [km/s] of
+Fengyun_1C_Deb_102 with respect to the centre of Mars:
+Position: [ -3.16064398e+08   4.67978840e+07   2.47605342e+07]
+Velocity:  [-15.22992539 -49.26948181 -14.59125297]
+</code></pre>
+</div>
+
+</div>
+
+  </div>
+</body>
+</html>
