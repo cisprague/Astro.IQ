@@ -7,13 +7,13 @@ name:               "Astro.IQ"
 description:        "Machine Learning + Trajectory Optimisation"
 
 # jekyll-seo-tag, see: http://www.rubydoc.info/gems/jekyll-seo-tag/1.2.0
-url:                "//cisprague.github.io/Astro.IQ"
+url:                "https://cisprague.github.io"
 author:             "Christopher Iliffe Sprague"
 github:
   username:         "cisprague"
 
 # URL
-baseurl:            ""
+baseurl:            "/Astro.IQ"
 #baseurl:            "" #For Root Domain
 permalink:          /:year/:month/:day/:title/
 
@@ -23,11 +23,11 @@ markdown:           kramdown
 # Navigation
 nav:
   - name:           "About"
-    href:           "about"
+    href:           "/Astro.IQ/about"
   - name:           "Download"
     href:           "https://github.com/cisprague/astro.iq"
   - name:           "Tutorial"
-    href:           "tutorial"
+    href:           "/Astro.IQ/tutorial"
 
 # Sass
 sass:
