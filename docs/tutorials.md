@@ -1,6 +1,6 @@
 ---
-title: Tutorial
-permalink: /tutorial/
+title: Tutorials
+permalink: /tutorials/
 ---
 
 ## It's as easy as this

@@ -25,9 +25,9 @@ nav:
   - name:           "About"
     href:           "/Astro.IQ/about"
   - name:           "Download"
-    href:           "https://github.com/cisprague/astro.iq"
-  - name:           "Tutorial"
-    href:           "/Astro.IQ/tutorial"
+    href:           "/Astro.IQ/download"
+  - name:           "Tutorials"
+    href:           "/Astro.IQ/tutorials"
 
 # Sass
 sass:
