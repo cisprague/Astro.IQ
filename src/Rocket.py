@@ -1,5 +1,7 @@
-from numpy import (hsplit, array,zeros_like,insert,cross,append,radians,sin,cos,empty,pi,vstack,float64,linspace,empty,zeros,arange)
+from numpy import (hsplit, array,zeros_like,insert,cross,append,radians,sin,
+                   cos,empty,pi,vstack,float64,linspace,empty,zeros,arange,split)
 from numpy.linalg import (norm,inv)
+from numpy.random import rand
 from scipy.integrate import odeint
 from PyGMO.problem._base import base
 from numpy.random import randn, uniform
@@ -7,66 +9,107 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 
-class Rocket(object):
+class Rocket(base):
+    '''
+    Initial State: state0 | Target State: statet
+    state = [x,y,z,vx,vy,vz,qr,qi,qj,qk,wx,wy,wz,m]
+    in [m,m,m,m/s,m/s,m/s,ND,ND,ND,ND,rad/s,rad/s,rad/s,kg]
+    Parametres: params = [L,W,Isp] in [m,m,sec]
+    Optimization Parametres = [N_Nodes]
+
+    Control Vector:
+    Control vector for the spacecraft's propulsion
+    system, control = [T,incl,azim]. T denotes the
+    magnitude to which the thruster is fired, incl
+    indicates the thrust vector's inclination angle
+    measured from the positive z-axis in the body
+    frame, and azim indicated the azimuthal angle of
+    the thrust vector measured from the positive x-axis.
+    These three spherical coordinate parametres form a
+    control vector in the body fixed frame, from which
+    the translation force vector is computed in the
+    inertial frame, determined by the body's orientation.
+
+    NLP Descision Vector:
+    x = [s1,u1,s2,u2,...,sf,uf,t0,tf]
+    x = [x1,y1,z1,vx1,vy1,vz1,qr1,qi1,qj1,qk1,...
+         wx1,wy1,wz1,m1,T1,i1,a1,x2,y2,z2,vx2,...
+         vy2,vz2,qr2,qi2,qj2,qk2,wx2,wy2,wz2,m2,...
+         T2,i2,a2,...,xf,yf,zf,vxf,vyf,vzf,qrf,...
+         qif,qjf,qkf,wxf,wyf,wzf,mf,Tf,if,af,tf]
+    '''
 
     def __init__(
         self,
-        state0 = [0,0,1000,5,0,-5,1,0,0,0,0,0,0,10000],
-        statet = [0,0,0,0,0,0,1,0,0,0,0,0,0,None],
-        params = [5,1,2000]
+        state0 = [0,0,1000, # Position [m]
+                  5,0,-5,   # Velocity [m/s]
+                  1,0,0,0,  # Quaternions [nd]
+                  0,0,0,    # Angular velocity [rad/s]
+                  10000],   # Mass [kg]
+        statet = [0,0,0,
+                  0,0,0,
+                  1,0,0,0,
+                  0,0,0,
+                  None],
+        params = [5,1,2000],
+        nnodes = 3
     ):
-        '''
-        Initial State: state0 | Target State: statet
-        state = [x,y,z,vx,vy,vz,qr,qi,qj,qk,wx,wy,wz,m]
-        in [m,m,m,m/s,m/s,m/s,ND,ND,ND,ND,rad/s,rad/s,rad/s,kg]
-        Parametres: params = [L,W,Isp] in [m,m,sec]
-        Optimization Parametres = [N_Nodes]
-
-        Control Vector:
-        Control vector for the spacecraft's propulsion
-        system, control = [T,incl,azim]. T denotes the
-        magnitude to which the thruster is fired, incl
-        indicates the thrust vector's inclination angle
-        measured from the positive z-axis in the body
-        frame, and azim indicated the azimuthal angle of
-        the thrust vector measured from the positive x-axis.
-        These three spherical coordinate parametres form a
-        control vector in the body fixed frame, from which
-        the translation force vector is computed in the
-        inertial frame, determined by the body's orientation.
-
-        NLP Descision Vector:
-        x = [s1,u1,s2,u2,...,sf,uf,t0,tf]
-        x = [x1,y1,z1,vx1,vy1,vz1,qr1,qi1,qj1,qk1,...
-             wx1,wy1,wz1,m1,T1,i1,a1,x2,y2,z2,vx2,...
-             vy2,vz2,qr2,qi2,qj2,qk2,wx2,wy2,wz2,m2,...
-             T2,i2,a2,...,xf,yf,zf,vxf,vyf,vzf,qrf,...
-             qif,qjf,qkf,wxf,wyf,wzf,mf,Tf,if,af,tf]
-
-        '''
 
         # Initialize
-        self.State = array(state0,dtype =float64)
-        self.Target = array(statet,dtype =float64)
-        self.Params = array(params,dtype =float64)
-
-        # Bounds
-        self.StateBounds = array([
-            [-1000,1000],[-1000,1000],[0,1000],
-            [-100,100],[-100,100],[-100,100],
-            [0,1],[0,1],[0,1],[0,1],
-            [-10,10],[-10,10],[-10,10],
-            [1000,1000]
-        ])
-        self.ContBounds = array([[0,1765800],[0,pi],[0,2*pi]],dtype=float64)
+        self.State    = array(state0, dtype=float64)
+        self.Target   = array(statet, dtype=float64)
+        self.Length   = params[0]
+        self.Width    = params[1]
+        self.Isp      = params[2]
 
         # Nonlinear Programme
-        self.StateDim = 14 # State dimensions
-        self.ContDim  = 3  # Control dimensions
-        self.NNodes   = 10 # Number of nodes
-        self.NAux     = 1  # Number of auxilary variables
-        self.NMain    = self.StateDim + self.ContDim
-        self.NLPDim   = self.NMain*self.NNodes+self.NAux
+        self.StateDim = len(self.State)
+        self.ContDim  = 3                              # Control dimension
+        self.NNodes   = nnodes                         # Number of nodes
+        self.NSeg     = self.NNodes-1                  # Number of segments
+        self.NInNodes = self.NNodes-2                  # Number of interior nodes
+        self.NLPDim   = self.StateDim*self.NInNodes + \
+                        self.ContDim*self.NSeg + 1
+
+        # Instantiate PaGMO problem (ESA-ACT)
+        super(Rocket, self).__init__(
+            self.NLPDim,
+            0,
+            1,
+            self.StateDim*self.NSeg - 1, # Mass not a terminal constraint
+            0,
+            1e-4
+        )
+        # This a a rectanguar box bound problem
+        self.LB = array([-1000,-1000,0,-100,-100,-100,0,0,0,0,-20,-20,-20,0]*self.NInNodes +
+        [0,0,0]*self.NSeg + [5])
+        self.UB = array([1000,1000,1000,100,100,100,1,1,1,1,20,20,20,1000]*self.NInNodes +
+        [176580,pi,2*pi]*self.NSeg + [4000])
+        self.set_bounds(self.LB, self.UB)
+
+    def randx(self):
+        return rand(self.NLPDim)*(self.UB-self.LB) + self.LB
+
+    def DecodeNLP(self,x):
+        '''
+        Decodes the nonlinear programme descision
+        vector.
+        '''
+        states,x    = split(x,[self.StateDim*self.NInNodes])
+        controls,tf = split(x,[self.ContDim*self.NSeg])
+        states      = states.reshape(self.NInNodes,self.StateDim)
+        controls    = controls.reshape(self.NSeg,self.ContDim)
+        tf = tf[0]
+        return states, controls, tf
+
+    def _objfun_impl(self, x):
+        states, controls, tf = self.DecodeNLP(x)
+        # Propogate
+
+    def Propogate(self,s,u,t0,tf):
+        s2 = odeint(self.RHS)
+
+
 
     def Optimise(self,x0):
         cons = ({'type': 'eq', 'fun': self.Defects})
@@ -145,25 +188,6 @@ class Rocket(object):
         dS[13]    = -T/(Isp*9.807)
         return dS
 
-    def Decode_NLP(self,x):
-        '''
-        Decodes the nonlinear programme descision
-        vector.
-        '''
-        tf = x[-1]
-        x  = x[:-1].reshape((self.NNodes,self.NMain))
-        states, controls = hsplit(x,[self.StateDim])
-        return states,controls,tf
-
-    def xrand(self):
-        xrand = []
-        for n in range(self.NNodes):
-            for s in range(self.StateDim):
-                xrand.append(uniform(*self.StateBounds[s]))
-            for u in range(self.ContDim):
-                xrand.append(uniform(*self.ContBounds[u]))
-        xrand.append(1000)
-        return array(xrand,dtype=float64)
 
     @staticmethod
     def Eul2Quat(psi, theta, phi, unit):
@@ -251,6 +275,5 @@ class Rocket(object):
         return A
 
 if __name__ == "__main__":
-    Falcon = Rocket()
-    x = Falcon.xrand()
-    Falcon.Constraints(x)
+    Falcon = Rocket(nnodes=5)
+    print Falcon.State
