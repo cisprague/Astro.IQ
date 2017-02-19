@@ -11,47 +11,39 @@ from mpl_toolkits.mplot3d import Axes3D
 
 class Rocket(base):
     '''
-    Initial State: state0 | Target State: statet
-    state = [x,y,z,vx,vy,vz,qr,qi,qj,qk,wx,wy,wz,m]
-    in [m,m,m,m/s,m/s,m/s,ND,ND,ND,ND,rad/s,rad/s,rad/s,kg]
-    Parametres: params = [L,W,Isp] in [m,m,sec]
-    Optimization Parametres = [N_Nodes]
+        Initial State: state0 | Target State: statet
+        state = [x,y,z,vx,vy,vz,qr,qi,qj,qk,wx,wy,wz,m]
+        in [m,m,m,m/s,m/s,m/s,ND,ND,ND,ND,rad/s,rad/s,rad/s,kg]
+        Parametres: params = [L,W,Isp] in [m,m,sec]
+        Optimization Parametres = [N_Nodes]
 
-    Control Vector:
-    Control vector for the spacecraft's propulsion
-    system, control = [T,incl,azim]. T denotes the
-    magnitude to which the thruster is fired, incl
-    indicates the thrust vector's inclination angle
-    measured from the positive z-axis in the body
-    frame, and azim indicated the azimuthal angle of
-    the thrust vector measured from the positive x-axis.
-    These three spherical coordinate parametres form a
-    control vector in the body fixed frame, from which
-    the translation force vector is computed in the
-    inertial frame, determined by the body's orientation.
+        Control Vector:
+        Control vector for the spacecraft's propulsion
+        system, control = [T,incl,azim]. T denotes the
+        magnitude to which the thruster is fired, incl
+        indicates the thrust vector's inclination angle
+        measured from the positive z-axis in the body
+        frame, and azim indicated the azimuthal angle of
+        the thrust vector measured from the positive x-axis.
+        These three spherical coordinate parametres form a
+        control vector in the body fixed frame, from which
+        the translation force vector is computed in the
+        inertial frame, determined by the body's orientation.
 
-    NLP Descision Vector:
-    x = [s1,u1,s2,u2,...,sf,uf,t0,tf]
-    x = [x1,y1,z1,vx1,vy1,vz1,qr1,qi1,qj1,qk1,...
-         wx1,wy1,wz1,m1,T1,i1,a1,x2,y2,z2,vx2,...
-         vy2,vz2,qr2,qi2,qj2,qk2,wx2,wy2,wz2,m2,...
-         T2,i2,a2,...,xf,yf,zf,vxf,vyf,vzf,qrf,...
-         qif,qjf,qkf,wxf,wyf,wzf,mf,Tf,if,af,tf]
+        NLP Descision Vector:
+        x = [s1,u1,s2,u2,...,sf,uf,t0,tf]
+        x = [x1,y1,z1,vx1,vy1,vz1,qr1,qi1,qj1,qk1,...
+             wx1,wy1,wz1,m1,T1,i1,a1,x2,y2,z2,vx2,...
+             vy2,vz2,qr2,qi2,qj2,qk2,wx2,wy2,wz2,m2,...
+             T2,i2,a2,...,xf,yf,zf,vxf,vyf,vzf,qrf,...
+             qif,qjf,qkf,wxf,wyf,wzf,mf,Tf,if,af,tf]
     '''
 
     def __init__(
         self,
-        state0 = [0,0,1000, # Position [m]
-                  5,0,-5,   # Velocity [m/s]
-                  1,0,0,0,  # Quaternions [nd]
-                  0,0,0,    # Angular velocity [rad/s]
-                  10000],   # Mass [kg]
-        statet = [0,0,0,
-                  0,0,0,
-                  1,0,0,0,
-                  0,0,0,
-                  None],
-        params = [5,1,2000],
+        state0 = [0,0,1000,5,0,-5,1,0,0,0,0,0,0,10000],
+        statet = [0,0,0,0,0,0,1,0,0,0,0,0,0,None],
+        params = [5,1,300,5886000.*0.3],
         nnodes = 3
     ):
 
@@ -61,6 +53,7 @@ class Rocket(base):
         self.Length   = params[0]
         self.Width    = params[1]
         self.Isp      = params[2]
+        self.Tmax     = params[3]
 
         # Nonlinear Programme
         self.StateDim = len(self.State)
@@ -131,7 +124,6 @@ class Rocket(base):
         states,controls,tf = self.Decode_NLP(x)
         t = linspace(0,tf,self.NNodes) # Time grid
         constr = states[0]-self.State # Initial
-        print constr
         for n in range(self.NNodes-1):
             s1 = states[n]
             s2 = states[n+1]
@@ -275,5 +267,5 @@ class Rocket(base):
         return A
 
 if __name__ == "__main__":
-    Falcon = Rocket(nnodes=5)
-    print Falcon.State
+    Falcon = Rocket(nnodes=20)
+    print Falcon.Constraints()
