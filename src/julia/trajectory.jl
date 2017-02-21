@@ -71,8 +71,13 @@ type PointLander2D
       y      = map(v -> v[2], fsl)
       vx     = map(v -> v[3], fsl)
       vy     = map(v -> v[4], fsl)
+      m      = map(v -> v[5], fsl)
+      λx     = map(v -> v[6], fsl)
+      λy     = map(v -> v[7], fsl)
+      λvx    = map(v -> v[8], fsl)
+      λvy    = map(v -> v[9], fsl)
       λm     = map(v -> v[10], fsl)
-      return [x[end]-sf[1],y[end]-sf[2],vx[end]-sf[3],vy[end]-sf[4],λm[end]]
+      return [x[end],y[end],vx[end],vy[end],m[end],λx[end],λy[end],λvx[end],λvy[end],λm[end]]
     end
 
     function Hamiltonian(fullstate::Vector)
@@ -90,18 +95,44 @@ type PointLander2D
     end
 
     self.Optimise = function()
-      mod = Model(solver = IpoptSolver())
+      mod = Model()
       @variable(mod, tf ≥ 0)
       @variable(mod, -1 ≤ λx0 ≤ 1)
       @variable(mod, -1 ≤ λy0 ≤ 1)
       @variable(mod, -1 ≤ λvx0 ≤ 1)
       @variable(mod, -1 ≤ λvy0 ≤ 1)
       @variable(mod, -1 ≤ λm0 ≤ 1)
-      JuMP.register(:Shoot, 6, Shoot, autodiff=true)
-      @NLconstraint(mod, Shoot())
-      @NLexpression(mod, Shoot([tf,λx0,λy0,λvx0,λvy0,λm0]))
-    end
+      # Define constraints
+      function Constraints(cb)
+        tfv   = getvalue(tf)
+        λx0v  = getvalue(λx0)
+        λy0v  = getvalue(λy0)
+        λvx0v = getvalue(λvx0)
+        λvy0v = getvalue(λvy0)
+        λm0v  = getvalue(λm0)
 
+        # Final State
+        fsf = Shoot([λtfv,λx0v,λy0v,λvx0v,λvy0v,λm0v])
+        Hf  = Hamiltonian(fsf)
+
+        @lazyconstraint(cb, fsf[1] == sf[1])
+        @lazyconstraint(cb, fsf[2] == sf[2])
+        @lazyconstraint(cb, fsf[3] == sf[3])
+        @lazyconstraint(cb, fsf[4] == sf[4])
+        @lazyconstraint(cb, fsf[10] == 0) # Free Mass
+        @lazyconstraint(cb, Hf == 0) # Free time
+
+      end
+      addlazycallback(mod, Constraints)
+      solve(mod)
+      tf   = getvalue(tf)
+      λx0  = getvalue(λx0)
+      λy0  = getvalue(λy0)
+      λvx0 = getvalue(λvx0)
+      λvy0 = getvalue(λvy0)
+      λm0  = getvalue(λm0)
+      return [tf,λx0,λy0,λvx0,λvy0,λm0]
+    end
     return self
   end
 end
@@ -120,4 +151,4 @@ c  = [0.5,0.5,0.5]
 λ  = [1.1,1.4,1.2,1.2,1.5]
 fs = vcat(s,λ)
 dec = [100.0;0.1;0.1;0.1;0.1;0.1]
-P.Optimise()
+solution = P.Optimise()
