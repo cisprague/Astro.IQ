@@ -6,12 +6,72 @@
 		<atom:link href="https://cisprague.github.io/feed.xml" rel="self" type="application/rss+xml" />
 		
 			<item>
+				<title>Indirect Trajectory Optimization for Cislunar Trajectories</title>
+        <description>&lt;h2 id=&quot;dynamics&quot;&gt;Dynamics&lt;/h2&gt;
+&lt;p&gt;The dynamics of a spacecraft in the &lt;em&gt;circular restricted three-body problem&lt;/em&gt; (CRTBP) are characterised in scaler form by the ordinary differential equations&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+  \dot{x} &amp;= v_x \\
+  \dot{y} &amp;= v_y \\
+  \dot{z} &amp;= v_z \\
+  \dot{v}_x &amp;= x - \frac{(1-\mu)(x+\mu)}{r_1^3} - \frac{\mu (x+\mu-1)}{r_2^3} + 2 v_y + \frac{u T \hat{u}_x}{m} \\
+  \dot{v}_y &amp;= y - \frac{(1-\mu)y}{r_1^3}
+  - \frac{\mu y}{r_2^3} - 2 v_x + \frac{u T \hat{u}_y}{m} \\
+  \dot{v}_z &amp;= - \frac{(1-\mu)z}{r_1^3}
+  - \frac{\mu z}{r_2^3} + \frac{u T \hat{u}_z}{m} \\
+  \dot{m} &amp;= -\frac{u T}{I_{sp} g_0} \\
+  r_1 &amp;= \left((x+\mu)^2+y^2+z^2\right)^{1/2} \\
+  r_2 &amp;= \left((x+\mu-1)^2+y^2+z^2\right)^{1/2}
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;where &lt;script type=&quot;math/tex&quot;&gt;[x,y,z,v_x,v_y,v_z,m]^\intercal&lt;/script&gt; describes the state of the spacecraft and &lt;script type=&quot;math/tex&quot;&gt;u [\hat{u}_x,\hat{u}_y,\hat{u}_z]^\intercal&lt;/script&gt; is the control to be chosen along the spacecraft’s trajectory, where the throttle &lt;script type=&quot;math/tex&quot;&gt;u \in [0,1]&lt;/script&gt; and thrust direction &lt;script type=&quot;math/tex&quot;&gt;\sqrt{\hat{u}_x^2 + \hat{u}_y^2 + \hat{u}_z^2} = 1&lt;/script&gt;. The parameters inherent to the problem are:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Maximum thrust: &lt;script type=&quot;math/tex&quot;&gt;T&lt;/script&gt;&lt;/li&gt;
+  &lt;li&gt;Specific impulse: &lt;script type=&quot;math/tex&quot;&gt;I_{sp}&lt;/script&gt;&lt;/li&gt;
+  &lt;li&gt;Earth’s sea-level gravity: &lt;script type=&quot;math/tex&quot;&gt;g_0&lt;/script&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;cost-function&quot;&gt;Cost Function&lt;/h2&gt;
+&lt;p&gt;The desire for most spacecraft trajectories is to reduce fuel consumption. Such as it is, an &lt;em&gt;optimal trajectory&lt;/em&gt; should minimize the &lt;em&gt;homotopic&lt;/em&gt; path cost&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{J} = \frac{T}{I_{sp} g_0} \int_{t_0}^{t_f} (u - \alpha u (1-\alpha)) dt&lt;/script&gt;
+
+&lt;p&gt;from the initial time &lt;script type=&quot;math/tex&quot;&gt;t_i&lt;/script&gt; to the &lt;em&gt;specified&lt;/em&gt; final time &lt;script type=&quot;math/tex&quot;&gt;t_f&lt;/script&gt;. The parameter &lt;script type=&quot;math/tex&quot;&gt;\alpha&lt;/script&gt; is implemented in order to avoid numerical convergence difficulties associated with the discontinuous nature of mass optimal &lt;em&gt;bang-bang&lt;/em&gt; control. In practice, the trajectory is initially optimized with the homotopy parameter &lt;script type=&quot;math/tex&quot;&gt;\alpha = 1&lt;/script&gt; for convergence ease, after which the trajectory is optimized for iteratively smaller values until &lt;script type=&quot;math/tex&quot;&gt;\alpha=0&lt;/script&gt;, corresponding to a mass path cost.&lt;/p&gt;
+
+&lt;h2 id=&quot;optimal-control&quot;&gt;Optimal Control&lt;/h2&gt;
+&lt;p&gt;The &lt;em&gt;dynamical system&lt;/em&gt; is a &lt;em&gt;Hamiltonian System&lt;/em&gt;, and its &lt;em&gt;Hamiltonian&lt;/em&gt; is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\begin{multline}
+\mathcal{H} = \lambda_x v_x + \lambda_y v_y + \lambda_z v_z \\
++ \lambda_{v_x} \left( x - \frac{(1-\mu)(x+\mu)}{r_1^3} - \frac{\mu (x+\mu-1)}{r_2^3} + 2 v_y + \frac{u T \hat{u}_x}{m} \right) \\
++ \lambda_{v_y} \left(y - \frac{(1-\mu)y}{r_1^3}
+- \frac{\mu y}{r_2^3} - 2 v_x + \frac{u T \hat{u}_y}{m} \right) \\
++ \lambda_{v_z} \left(\frac{(1-\mu)z}{r_1^3}
+- \frac{\mu z}{r_2^3} + \frac{u T \hat{u}_z}{m} \right)
+- \lambda_m \frac{u T}{I_{sp} g_0} \\
++ \frac{T}{I_{sp} g_0}  (u - \alpha u (1-\alpha))
+\end{multline}&lt;/script&gt;
+
+&lt;h2 id=&quot;nonlinear-parameter-optimization&quot;&gt;Nonlinear Parameter Optimization&lt;/h2&gt;
+&lt;p&gt;Determine the decision vector&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;[\lambda_x, \lambda_y, \lambda_z, \lambda_{v_x}, \lambda_{v_y},
+\lambda_{v_z}, \lambda_m] \Bigr\rvert_{t_0}&lt;/script&gt;
+</description>
+				<pubDate>Wed, 22 Feb 2017 00:00:00 -0500</pubDate>
+				<link>https://cisprague.github.io/2017/02/22/Indirect-Trajectory-Optimization/</link>
+				<guid isPermaLink="true">https://cisprague.github.io/2017/02/22/Indirect-Trajectory-Optimization/</guid>
+			</item>
+		
+			<item>
 				<title>Landing Rockets with Deep Reinforcement Learning</title>
         <description>&lt;p&gt;While rocket landing problems are typically solved through conventional trajectory optimization techniques combined with heuristic control, recent developments in deep learning suggest that neural networks are able to approximate the Hamilton-Jacobi-Bellman equation and control spacecraft optimally in real-time with spatial generalization.&lt;/p&gt;
 
 &lt;iframe src=&quot;//slides.com/christopheriliffesprague/deck/embed&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot; class=&quot;video&quot;&gt;&lt;/iframe&gt;
 </description>
-				<pubDate>Fri, 20 Jan 2017 00:00:00 -0600</pubDate>
+				<pubDate>Fri, 20 Jan 2017 00:00:00 -0500</pubDate>
 				<link>https://cisprague.github.io/2017/01/20/Deep-Learning-for-Rocket-Landings/</link>
 				<guid isPermaLink="true">https://cisprague.github.io/2017/01/20/Deep-Learning-for-Rocket-Landings/</guid>
 			</item>

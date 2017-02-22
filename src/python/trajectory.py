@@ -107,7 +107,7 @@ if __name__ == '__main__':
     fs = hstack((s,l))
     dec = array([100.0,0.5,0.5,0.5,0.5,0.5],dtype=float)
 
-    algo = algorithm.scipy_slsqp(max_iter = 2000,acc = 1E-8,epsilon = 1.49e-08, screen_output = True)
+    algo = algorithm.scipy_slsqp(max_iter = 1000,acc = 1E-8,epsilon = 1.49e-08, screen_output = True)
     algo.screen_output = True
 
     prob = PointLander2D(a=0.)

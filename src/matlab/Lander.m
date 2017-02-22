@@ -19,8 +19,9 @@ classdef Lander
             self.a  = a;
             % Indirect method decision vector:
             % Z = [tf,lx,ly,lvx,lvy,lm]
-            self.LBIndir = [0;-inf;-inf;-inf;-inf;-inf];
-            self.UBIndir = [10000;inf;inf;inf;inf;inf];
+            self.LBIndir = [1;-inf;-inf;-inf;-inf;-inf];
+            self.UBIndir = [1000;inf;inf;inf;inf;inf];
+            global fs
         end
         function ds = EOM_State(self,s,c)
             x = s(1,1);
@@ -114,7 +115,9 @@ classdef Lander
         
             
         function no = Objective(self,decision)
-            no = 1;
+            [t,fs] = self.Shoot(decision);
+            no = norm(fs(end,1:4));
+            
         end
         function [c,ceq] = Constraints(self,decision)
             [t,fs] = self.Shoot(decision);
