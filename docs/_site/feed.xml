@@ -58,7 +58,7 @@
 &lt;p&gt;Determine the decision vector&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;[\lambda_x, \lambda_y, \lambda_z, \lambda_{v_x}, \lambda_{v_y},
-\lambda_{v_z}, \lambda_m] \Bigr\rvert_{t_0}&lt;/script&gt;
+\lambda_{v_z}, \lambda_m, t_f] \Bigr\rvert_{t_0}&lt;/script&gt;
 </description>
 				<pubDate>Wed, 22 Feb 2017 00:00:00 -0500</pubDate>
 				<link>https://cisprague.github.io/2017/02/22/Indirect-Trajectory-Optimization/</link>

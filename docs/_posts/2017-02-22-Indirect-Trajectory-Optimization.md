@@ -57,4 +57,4 @@ $$
 Determine the decision vector
 
 $$ [\lambda_x, \lambda_y, \lambda_z, \lambda_{v_x}, \lambda_{v_y},
-\lambda_{v_z}, \lambda_m] \Bigr\rvert_{t_0} $$
+\lambda_{v_z}, \lambda_m, t_f] \Bigr\rvert_{t_0} $$
