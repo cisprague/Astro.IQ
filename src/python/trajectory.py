@@ -14,7 +14,7 @@ class PointLander2D(base):
         c1 = 44000.,
         c2 = 311.*9.81,
         g  = 1.6229,
-        a = 0.9
+        a = 0.0
     ):
         self.s0    = s0
         self.st    = st
@@ -24,9 +24,9 @@ class PointLander2D(base):
         self.a     = a
         # PyGMO NLP: Z = [tf,lx,ly,lvx,lvy,lm]
         super(PointLander2D, self).__init__(6,0,1,6,0,1e-5)
-        self.set_bounds([1]+[-1]*5, [400]+[1]*5)
+        self.set_bounds([1]+[-1e6]*5, [10000]+[1e6]*5)
         return None
-    def EOM_State(self,state, control):
+    def EOM_State(self, state, control):
         x,y,vx,vy,m = state
         u,st,ct     = control
         dx          = vx
@@ -40,8 +40,8 @@ class PointLander2D(base):
         u,st,ct = control
         dlx  = 0.
         dly  = 0.
-        dlvx = 0.
-        dlvy = 0.
+        dlvx = -lx
+        dlvy = -ly
         dlm  = self.c1*u*(lvx*st+lvy*ct)/m**2
         return array([dlx,dly,dlvx,dlvy,dlm],dtype=float)
     def Pontryagin(self,fullstate):
@@ -49,9 +49,16 @@ class PointLander2D(base):
         lv = norm([lvx,lvy])
         st = -lvx/lv
         ct = -lvy/lv
-        u = min(max((lm - self.a - lv*self.c2/m)/(2*self.c1*(1-self.a)),0),1)
+        if self.a == 1:
+            S = 1. - lm - lv*self.c2/m
+            if S >= 0:
+                u = 0
+            elif S < 0:
+                u = 1
+        else:
+            u = min(max((lm - self.a - lv*self.c2/m)/(2*self.c1*(1-self.a)),0),1)
         return array([u,st,ct],dtype=float)
-    def EOM(self,t,fullstate):
+    def EOM(self,fullstate,t):
         state = fullstate[:5]
         control = self.Pontryagin(fullstate)
         ds = self.EOM_State(state, control)
@@ -61,15 +68,9 @@ class PointLander2D(base):
         tf = decision[0]
         l0 = decision[1:]
         fs0 = hstack((self.s0,l0))
-        t = linspace(0,tf,500)
-        sol = ode(self.EOM).set_integrator('dopri5')
-        sol.set_initial_value(fs0,0)
-        tl = []; fsl = []
-        def Out(t,y): tl.append(t), fsl.append(y)
-        sol.set_solout(Out)
-        sol.integrate(tf)
-        return array(tl), array(fsl)
-
+        t = linspace(0,tf,100)
+        sol= odeint(self.EOM, fs0, t)
+        return t, sol
     def Hamiltonian(self,fullstate):
         s = fullstate[:5]
         l = fullstate[5:]
@@ -91,27 +92,30 @@ class PointLander2D(base):
         xt,yt,vxt,vyt,mt = self.st
         H = self.Hamiltonian(fsf)
         return [xf-xt,yf-yt,vxf-vxt,vyf-vyt,lmf,H]
+    def Plot(self, traj, t):
+        f, ax = plt.subplots(2,2)
+        ax[0,0].plot(traj[:,0],traj[:,1])
+        ax[0,1].plot(t,traj[:,2],t,traj[:,3])
+        ax[1,0].plot(t,traj[:,4])
+        plt.show()
 
 if __name__ == '__main__':
     prob = PointLander2D()
     s = prob.s0
-    c = array([0.5,0.5,0.5])
-    l = array([1.1,1.3,1.2,1.2,1.5])
+    c = array([1.,0.,1.],dtype=float)
+    l = array([0.5,0.5,0.5,0.5,0.5],dtype=float)
     fs = hstack((s,l))
-    dec = array([100.0,0.1,0.1,0.1,0.1,0.1])
-    #print prob.Shoot(dec)
-    #sol = prob.Shoot(dec)
-    #plt.plot(sol[:,0],sol[:,1])
-    #plt.show()
-    #print prob.Pontryagin(fs)
-    normalized(prob)
+    dec = array([100.0,0.5,0.5,0.5,0.5,0.5],dtype=float)
 
-    algo = algorithm.scipy_slsqp(max_iter = 10000,acc = 1E-8,epsilon = 1.49e-8, screen_output = True)
+    algo = algorithm.scipy_slsqp(max_iter = 2000,acc = 1E-8,epsilon = 1.49e-08, screen_output = True)
     algo.screen_output = True
 
-    for i in range(1,1000):
-        print("Attempt {}".format(i))
+    prob = PointLander2D(a=0.)
+    count = 1
+    for i in range(1, 200):
+        print("Attempt # {}".format(i))
         pop = population(prob,1)
+        pop = algo.evolve(pop)
         pop = algo.evolve(pop)
         pop = algo.evolve(pop)
         if (prob.feasibility_x(pop[0].cur_x)):
@@ -124,8 +128,5 @@ if __name__ == '__main__':
     print(prob.feasibility_x(pop[0].cur_x))
 
     decf = array(pop[0].cur_x)
-    sol = prob.Shoot(decf)
-    plt.plot(sol[:,0],sol[:,1])
-    plt.show()
-    plt.plot(sol[:,2],sol[:3])
-    plt.show()
+    t, sol = prob.Shoot(decf)
+    prob.Plot(sol,t)
