@@ -7,7 +7,10 @@
 		
 			<item>
 				<title>Indirect Trajectory Optimization for Cislunar Trajectories</title>
-        <description>&lt;h2 id=&quot;dynamics&quot;&gt;Dynamics&lt;/h2&gt;
+        <description>&lt;h2 id=&quot;objective&quot;&gt;Objective&lt;/h2&gt;
+&lt;p&gt;Find the sequence of thrusts &lt;script type=&quot;math/tex&quot;&gt;\pmb{u}(t)\forall t \in [t_I,t_F]&lt;/script&gt; to take a spacecraft from an orbit about Earth at time &lt;script type=&quot;math/tex&quot;&gt;t_I&lt;/script&gt; to an orbit about the &lt;script type=&quot;math/tex&quot;&gt;\mathcal{L}_2&lt;/script&gt; &lt;em&gt;Lagrange point&lt;/em&gt; at time &lt;script type=&quot;math/tex&quot;&gt;t_F&lt;/script&gt;, while minimizing the total amount of expended fuel &lt;script type=&quot;math/tex&quot;&gt;m(t_F)&lt;/script&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;dynamics&quot;&gt;Dynamics&lt;/h2&gt;
 &lt;p&gt;The dynamics of a spacecraft in the &lt;em&gt;circular restricted three-body problem&lt;/em&gt; (CRTBP) are characterised in scaler form by the ordinary differential equations&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
@@ -21,11 +24,11 @@
   \dot{v}_z &amp;= - \frac{(1-\mu)z}{r_1^3}
   - \frac{\mu z}{r_2^3} + \frac{u T \hat{u}_z}{m} \\
   \dot{m} &amp;= -\frac{u T}{I_{sp} g_0} \\
-  r_1 &amp;= \left((x+\mu)^2+y^2+z^2\right)^{1/2} \\
-  r_2 &amp;= \left((x+\mu-1)^2+y^2+z^2\right)^{1/2}
+  r_1 &amp;= \sqrt{(x+\mu)^2+y^2+z^2}\\
+  r_2 &amp;= \sqrt{(x+\mu-1)^2+y^2+z^2}
 \end{align} %]]&gt;&lt;/script&gt;
 
-&lt;p&gt;where &lt;script type=&quot;math/tex&quot;&gt;[x,y,z,v_x,v_y,v_z,m]^\intercal&lt;/script&gt; describes the state of the spacecraft and &lt;script type=&quot;math/tex&quot;&gt;u [\hat{u}_x,\hat{u}_y,\hat{u}_z]^\intercal&lt;/script&gt; is the control to be chosen along the spacecraft’s trajectory, where the throttle &lt;script type=&quot;math/tex&quot;&gt;u \in [0,1]&lt;/script&gt; and thrust direction &lt;script type=&quot;math/tex&quot;&gt;\sqrt{\hat{u}_x^2 + \hat{u}_y^2 + \hat{u}_z^2} = 1&lt;/script&gt;. The parameters inherent to the problem are:&lt;/p&gt;
+&lt;p&gt;where &lt;script type=&quot;math/tex&quot;&gt;[x,y,z,v_x,v_y,v_z,m]^\intercal&lt;/script&gt; describes the state of the spacecraft and &lt;script type=&quot;math/tex&quot;&gt;\pmb{u} = u [\hat{u}_x,\hat{u}_y,\hat{u}_z]^\intercal&lt;/script&gt; is the control to be chosen along the spacecraft’s trajectory, where the throttle &lt;script type=&quot;math/tex&quot;&gt;u \in [0,1]&lt;/script&gt; and thrust direction &lt;script type=&quot;math/tex&quot;&gt;\sqrt{\hat{u}_x^2 + \hat{u}_y^2 + \hat{u}_z^2} = 1&lt;/script&gt;. The parameters inherent to the problem are:&lt;/p&gt;
 
 &lt;ol&gt;
   &lt;li&gt;Maximum thrust: &lt;script type=&quot;math/tex&quot;&gt;T&lt;/script&gt;&lt;/li&gt;

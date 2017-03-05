@@ -3,6 +3,9 @@ title: "Indirect Trajectory Optimization for Cislunar Trajectories"
 author: "Christopher Iliffe Sprague"
 ---
 
+## Objective
+Find the sequence of thrusts $$\pmb{u}(t)\forall t \in [t_I,t_F]$$ to take a spacecraft from an orbit about Earth at time $$t_I$$ to an orbit about the $$\mathcal{L}_2$$ *Lagrange point* at time $$t_F$$, while minimizing the total amount of expended fuel $$m(t_F)$$.
+
 ## Dynamics
 The dynamics of a spacecraft in the *circular restricted three-body problem* (CRTBP) are characterised in scaler form by the ordinary differential equations
 
@@ -17,12 +20,12 @@ $$
   \dot{v}_z &= - \frac{(1-\mu)z}{r_1^3}
   - \frac{\mu z}{r_2^3} + \frac{u T \hat{u}_z}{m} \\
   \dot{m} &= -\frac{u T}{I_{sp} g_0} \\
-  r_1 &= \left((x+\mu)^2+y^2+z^2\right)^{1/2} \\
-  r_2 &= \left((x+\mu-1)^2+y^2+z^2\right)^{1/2}
+  r_1 &= \sqrt{(x+\mu)^2+y^2+z^2}\\
+  r_2 &= \sqrt{(x+\mu-1)^2+y^2+z^2}
 \end{align}
 $$
 
-where $$[x,y,z,v_x,v_y,v_z,m]^\intercal$$ describes the state of the spacecraft and $$u [\hat{u}_x,\hat{u}_y,\hat{u}_z]^\intercal$$ is the control to be chosen along the spacecraft's trajectory, where the throttle $$u \in [0,1]$$ and thrust direction $$\sqrt{\hat{u}_x^2 + \hat{u}_y^2 + \hat{u}_z^2} = 1$$. The parameters inherent to the problem are:
+where $$[x,y,z,v_x,v_y,v_z,m]^\intercal$$ describes the state of the spacecraft and $$\pmb{u} = u [\hat{u}_x,\hat{u}_y,\hat{u}_z]^\intercal$$ is the control to be chosen along the spacecraft's trajectory, where the throttle $$u \in [0,1]$$ and thrust direction $$\sqrt{\hat{u}_x^2 + \hat{u}_y^2 + \hat{u}_z^2} = 1$$. The parameters inherent to the problem are:
 
 1. Maximum thrust: $$T$$
 2. Specific impulse: $$I_{sp}$$
@@ -52,6 +55,8 @@ $$
 + \frac{T}{I_{sp} g_0}  (u - \alpha u (1-\alpha))
 \end{multline}
 $$
+
+
 
 ## Nonlinear Parameter Optimization
 Determine the decision vector

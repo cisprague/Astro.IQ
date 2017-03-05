@@ -1,10 +1,14 @@
-from numpy import array, sqrt, hstack, linspace
+from numpy import array, sqrt, hstack, linspace, meshgrid, arange, outer, ones, cos, sin, pi, size
 from numpy.linalg import norm
 from scipy.integrate import ode, odeint
 import matplotlib.pyplot as plt
 from PyGMO.problem import base, normalized
 from PyGMO import *
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.ticker import MultipleLocator
+import matplotlib.animation as animation
+import matplotlib.cm as cm
 
 class PointLander2D(base):
     def __init__(
@@ -99,34 +103,94 @@ class PointLander2D(base):
         ax[1,0].plot(t,traj[:,4])
         plt.show()
 
-if __name__ == '__main__':
-    prob = PointLander2D()
-    s = prob.s0
-    c = array([1.,0.,1.],dtype=float)
-    l = array([0.5,0.5,0.5,0.5,0.5],dtype=float)
-    fs = hstack((s,l))
-    dec = array([100.0,0.5,0.5,0.5,0.5,0.5],dtype=float)
+class CRTBP(object):
+    def __init__(self):
+        self.mu = 0.01215
+        self.s0 = array([-0.6, 0.7, 0, 0, 0, 0, 0], dtype = float)
 
-    algo = algorithm.scipy_slsqp(max_iter = 1000,acc = 1E-8,epsilon = 1.49e-08, screen_output = True)
-    algo.screen_output = True
+    def EOM_State(self, t, state):
+        x, y, z, vx, vy, vz, m = state
+        mu  = self.mu
+        R1  = self.R1(x, y, z)
+        R2  = self.R2(x, y, z)
+        dx  = vx
+        dy  = vy
+        dz  = vz
+        dvx = 2*vy + x - (1-mu)*(x+mu)/R1**3 - mu*(x-1+mu)/R2**3
+        dvy = -2*vx + y - (1-mu)*y/R1**3 - mu*y/R2**3
+        dvz = -(1-mu)*z/R1**3 - mu*z/R2**3
+        dvm = 0
+        return array([dx, dy, dz, dvx, dvy, dvz, dvm], dtype = float)
 
-    prob = PointLander2D(a=0.)
-    count = 1
-    for i in range(1, 200):
-        print("Attempt # {}".format(i))
-        pop = population(prob,1)
-        pop = algo.evolve(pop)
-        pop = algo.evolve(pop)
-        pop = algo.evolve(pop)
-        if (prob.feasibility_x(pop[0].cur_x)):
-            print(" - Success, violation norm is: {0:.4g}".format(norm(pop[0].cur_c)))
-            break
-        else:
-            print(" - Failed, violation norm is: {0:.4g}".format(norm(pop[0].cur_c)))
+    def JacobiConstant(self, x, y, z, vx, vy, vz):
+        V = norm([vx, vy, vz])
+        Omega = self.PsuedoPotential(x, y, z)
+        return 2*Omega - V**2
 
-    print("PaGMO reports: ")
-    print(prob.feasibility_x(pop[0].cur_x))
+    def PsuedoPotential(self, x, y, z):
+        R1 = self.R1(x, y, z)
+        R2 = self.R2(x, y, z)
+        return 0.5*(x**2+y**2) + (1-self.mu)/R1 + self.mu/R2
 
-    decf = array(pop[0].cur_x)
-    t, sol = prob.Shoot(decf)
-    prob.Plot(sol,t)
+    def R1(self, x, y, z):
+        return ((x+self.mu)**2 + y**2 + z**2)**0.5
+
+    def R2(self, x, y, z):
+        return ((x-1+self.mu)**2 + y**2 + z**2)**0.5
+
+    def Shoot(self, state0, tf):
+        solver = ode(self.EOM_State).set_integrator('dop853',nsteps=1, atol=1e-14, rtol=1e-14)
+        solver.set_initial_value(state0, 0)
+        sol = []
+        while solver.t < tf:
+            solver.integrate(tf, step=True)
+            sol.append(solver.y)
+        return array(sol)
+
+    def PlotTraj(self, traj, dim = '2d'):
+        if dim is '3d':
+            fig = plt.figure()
+            ax  = fig.add_subplot(111, projection='3d')
+            ax.plot(traj[:,0], traj[:,1], traj[:,2], 'k-')
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')
+            ax.grid(False)
+            ax.xaxis.pane.set_edgecolor('black')
+            ax.yaxis.pane.set_edgecolor('black')
+            ax.zaxis.pane.set_edgecolor('black')
+            ax.xaxis.pane.fill = False
+            ax.yaxis.pane.fill = False
+            ax.zaxis.pane.fill = False
+            ax.xaxis._axinfo['tick']['inward_factor'] = 0
+            ax.xaxis._axinfo['tick']['outward_factor'] = 0.4
+            ax.yaxis._axinfo['tick']['inward_factor'] = 0
+            ax.yaxis._axinfo['tick']['outward_factor'] = 0.4
+            ax.zaxis._axinfo['tick']['inward_factor'] = 0
+            ax.zaxis._axinfo['tick']['outward_factor'] = 0.4
+            ax.zaxis._axinfo['tick']['outward_factor'] = 0.4
+            plt.show()
+        elif dim is '2d':
+            plt.plot(traj[:,0], traj[:,1], 'k.-')
+            plt.plot([-self.mu], [0], 'ko')
+            plt.plot([1-self.mu], [0], 'ko')
+            plt.xlabel('X')
+            plt.ylabel('Y')
+        return None
+
+    def PlotJacoabiConstant(self):
+        x    = arange(-1.5, 1.5, 0.01)
+        y    = arange(-1.5, 1.5, 0.01)
+        x, y = meshgrid(x, y)
+        z  = self.JacobiConstant(x, y, 0, 0, 0, 0)
+        CS = plt.contourf(x, y, z, levels = arange(2, 4, 0.1), cmap = cm.gray)
+        CL = plt.contour(x, y, z, levels = arange(2, 4, 0.1), colors = 'k')
+        plt.colorbar(CS)
+        return None
+
+if __name__ == "__main__":
+    p = CRTBP()
+    traj = p.Shoot(p.s0, 100)
+    p.PlotTraj(traj,'2d')
+    p.PlotJacoabiConstant()
+    plt.show()
