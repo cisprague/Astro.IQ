@@ -1,4 +1,4 @@
-from numpy import array, sqrt, hstack, linspace, meshgrid, arange, outer, ones, cos, sin, pi, size
+from numpy import array, sqrt, hstack, linspace, meshgrid, arange, outer, ones, cos, sin, pi, size, concatenate
 from numpy.linalg import norm
 from scipy.integrate import ode, odeint
 import matplotlib.pyplot as plt
@@ -86,7 +86,6 @@ class PointLander2D(base):
         u,st,ct = c
         H += ((1-self.a)*self.c1**2*u**2 + self.a*self.c1*u)/self.c2
         return H
-    # PyGMO Stuff (Thanks ESA!)
     def _objfun_impl(self, decision):
         return (1.,)
     def _compute_constraints_impl(self, decision):
@@ -102,51 +101,48 @@ class PointLander2D(base):
         ax[0,1].plot(t,traj[:,2],t,traj[:,3])
         ax[1,0].plot(t,traj[:,4])
         plt.show()
-
 class CRTBP(object):
+    '''
+        Indirect trajectory optimization of circular restricted
+        three body problem (CRTBP). The trajectory optimisation
+        problem is to select the intial costates to lead the
+        trajectory optimally through Pontryagin's Minimum Principle.
+    '''
+    # TODO: 1) Nicer plots, 2) Use hybdrid particle swarm optimisation
     def __init__(self):
-        self.mu = 0.01215
-        self.s0 = array([-0.6, 0.7, 0, 0, 0, 0, 0], dtype = float)
-
-    def EOM_State(self, t, state):
-        x, y, z, vx, vy, vz, m = state
-        mu  = self.mu
-        R1  = self.R1(x, y, z)
-        R2  = self.R2(x, y, z)
-        dx  = vx
-        dy  = vy
-        dz  = vz
-        dvx = 2*vy + x - (1-mu)*(x+mu)/R1**3 - mu*(x-1+mu)/R2**3
-        dvy = -2*vx + y - (1-mu)*y/R1**3 - mu*y/R2**3
-        dvz = -(1-mu)*z/R1**3 - mu*z/R2**3
-        dvm = 0
-        return array([dx, dy, dz, dvx, dvy, dvz, dvm], dtype = float)
-
+        self.mu = 0.01215 # Mass ratio: mu = m2/(m1+m2)
+        self.T  = 400 # Max thrust
+        self.Isp = 300
+        self.g0  = 9.8124
+        self.eps = 1
+        self.s0 = array([-0.3, 0, 0, 0, 0, 0, 1000], float)
+        self.L1 = (0.836915, 0)
+        self.L2 = (1.155682, 0)
+        self.L3 = (-1.005063, 0)
+        self.L4 = (0.4878494, 0.866025)
+        self.L5 = (0.4878494, -0.866025)
+        self.S  = []
+        self.U  = []
     def JacobiConstant(self, x, y, z, vx, vy, vz):
         V = norm([vx, vy, vz])
         Omega = self.PsuedoPotential(x, y, z)
         return 2*Omega - V**2
-
     def PsuedoPotential(self, x, y, z):
         R1 = self.R1(x, y, z)
         R2 = self.R2(x, y, z)
         return 0.5*(x**2+y**2) + (1-self.mu)/R1 + self.mu/R2
-
     def R1(self, x, y, z):
         return ((x+self.mu)**2 + y**2 + z**2)**0.5
-
     def R2(self, x, y, z):
         return ((x-1+self.mu)**2 + y**2 + z**2)**0.5
-
     def Shoot(self, state0, tf):
-        solver = ode(self.EOM_State).set_integrator('dop853',nsteps=1, atol=1e-14, rtol=1e-14)
+        solver = ode(self.EOM).set_integrator('dop853',nsteps=1, atol=1e-14, rtol=1e-14)
         solver.set_initial_value(state0, 0)
         sol = []
         while solver.t < tf:
             solver.integrate(tf, step=True)
             sol.append(solver.y)
         return array(sol)
-
     def PlotTraj(self, traj, dim = '2d'):
         if dim is '3d':
             fig = plt.figure()
@@ -171,13 +167,19 @@ class CRTBP(object):
             ax.zaxis._axinfo['tick']['outward_factor'] = 0.4
             plt.show()
         elif dim is '2d':
-            plt.plot(traj[:,0], traj[:,1], 'k.-')
-            plt.plot([-self.mu], [0], 'ko')
-            plt.plot([1-self.mu], [0], 'ko')
-            plt.xlabel('X')
-            plt.ylabel('Y')
+            f, ax = plt.subplots(2,2)
+            ax[0, 0].plot(traj[:,0], traj[:,1], 'k.-')
+            ax[0, 0].plot([-self.mu], [0], 'ko')
+            ax[0, 0].plot([1-self.mu], [0], 'ko')
+            ax[0, 0].plot([0.836915], [0], 'kx')
+            ax[0, 0].plot([1.155682], [0], 'kx')
+            ax[0, 0].plot([-1.005063], [0], 'kx')
+            ax[0, 0].plot([0.4878494], [0.866025], 'kx')
+            ax[0, 0].plot([0.4878494], [-0.866025], 'kx')
+            ax[0, 1].plot(self.S)
+            ax[1,0].plot(self.U)
+            ax[1,1].plot(traj[:,6:13])
         return None
-
     def PlotJacoabiConstant(self):
         x    = arange(-1.5, 1.5, 0.01)
         y    = arange(-1.5, 1.5, 0.01)
@@ -187,10 +189,72 @@ class CRTBP(object):
         CL = plt.contour(x, y, z, levels = arange(2, 4, 0.1), colors = 'k')
         plt.colorbar(CS)
         return None
+    def EOM_State(self, state, control):
+        x, y, z, vx, vy, vz, m = state
+        u, ax, ay, az = control
+        mu, T, g0, Isp = self.mu, self.T, self.g0, self.Isp
+        return array([
+            vx,
+            vy,
+            vz,
+            (ax*T*u)/m+2*vy+x-(mu*(-1+mu+x))/((-1+mu+x)**2+y**2+z**2)**(3/2.)-((1-mu)*(mu+x))/((mu+x)**2+y**2+z**2)**(3/2.),
+            (ay*T*u)/m-2*vx+y-(mu*y)/((-1+mu+x)**2+y**2+z**2)**(3/2.)-((1-mu)*y)/((mu+x)**2+y**2+z**2)**(3/2.),
+            (az*T*u)/m-(mu*z)/((-1+mu+x)**2+y**2+z**2)**(3/2.)+((-1+mu)*z)/((mu+x)**2+y**2+z**2)**(3/2.),
+            -((T*u)/(g0*Isp))
+        ], float)
+    def EOM_Costate(self, fullstate, control):
+        x, y, z, vx, vy, vz, m, lx, ly, lz, lvx, lvy, lvz, lvm = fullstate
+        u, ax, ay, az = control
+        mu, T = self.mu, self.T
+        return array([
+            -(lvy*((3*mu*(-1+mu+x)*y)/((-1+mu+x)**2+y**2+z**2)**(5/2.)+(3*(1-mu)*(mu+x)*y)/((mu+x)**2+y**2+z**2)**(5/2.)))-lvz*((3*mu*(-1+mu+x)*z)/((-1+mu+x)**2+y**2+z**2)**(5/2.)-(3*(-1+mu)*(mu+x)*z)/((mu+x)**2+y**2+z**2)**(5/2.))-lvx*(1+(3*mu*(-1+mu+x)**2)/((-1+mu+x)**2+y**2+z**2)**(5/2.)-mu/((-1+mu+x)**2+y**2+z**2)**(3/2.)+(3*(1-mu)*(mu+x)**2)/((mu+x)**2+y**2+z**2)**(5/2.)-(1-mu)/((mu+x)**2+y**2+z**2)**(3/2.)),
+            -(lvx*((3*mu*(-1+mu+x)*y)/((-1+mu+x)**2+y**2+z**2)**(5/2.)+(3*(1-mu)*(mu+x)*y)/((mu+x)**2+y**2+z**2)**(5/2.)))-lvz*((3*mu*y*z)/((-1+mu+x)**2+y**2+z**2)**(5/2.)-(3*(-1+mu)*y*z)/((mu+x)**2+y**2+z**2)**(5/2.))-lvy*(1+(3*mu*y**2)/((-1+mu+x)**2+y**2+z**2)**(5/2.)-mu/((-1+mu+x)**2+y**2+z**2)**(3/2.)+(3*(1-mu)*y**2)/((mu+x)**2+y**2+z**2)**(5/2.)-(1-mu)/((mu+x)**2+y**2+z**2)**(3/2.)),
+            -(lvx*((3*mu*(-1+mu+x)*z)/((-1+mu+x)**2+y**2+z**2)**(5/2.)+(3*(1-mu)*(mu+x)*z)/((mu+x)**2+y**2+z**2)**(5/2.)))-lvy*((3*mu*y*z)/((-1+mu+x)**2+y**2+z**2)**(5/2.)+(3*(1-mu)*y*z)/((mu+x)**2+y**2+z**2)**(5/2.))-lvz*((3*mu*z**2)/((-1+mu+x)**2+y**2+z**2)**(5/2.)-mu/((-1+mu+x)**2+y**2+z**2)**(3/2.)-(3*(-1+mu)*z**2)/((mu+x)**2+y**2+z**2)**(5/2.)+(-1+mu)/((mu+x)**2+y**2+z**2)**(3/2.)),
+            2*lvy-lx,
+            -2*lvx-ly,
+            -lz,
+            (ax*lvx*T*u)/m**2+(ay*lvy*T*u)/m**2+(az*lvz*T*u)/m**2
+        ], float)
+    def Pontryagin(self, fullstate):
+        x, y, z, vx, vy, vz, m, lx, ly, lz, lvx, lvy, lvz, lvm = fullstate
+        g0 = self.g0
+        Isp = self.Isp
+        eps = self.eps
+        ax = -(lvx/sqrt(abs(lvx)**2+abs(lvy)**2+abs(lvz)**2))
+        ay = -(lvy/sqrt(abs(lvx)**2+abs(lvy)**2+abs(lvz)**2))
+        az = -(lvz/sqrt(abs(lvx)**2+abs(lvy)**2+abs(lvz)**2))
+        S  = 1-lm-(g0*Isp*sqrt(abs(lvx)**2+abs(lvy)**2+abs(lvz)**2))/m
+        self.S.append(S)
+        if S > eps:
+            u = 0
+        elif -eps <= S and S <= eps:
+            u = (eps - S)/2*eps
+        elif S < -eps:
+            u = 1
+        self.U.append(u)
+        print u
+        return array([u, ax, ay, az], float)
+    def EOM(self, t, fullstate):
+        state   = fullstate[0:7]
+        control = self.Pontryagin(fullstate)
+        ds      = self.EOM_State(state, control)
+        dl      = self.EOM_Costate(fullstate, control)
+        return hstack((ds, dl))
 
 if __name__ == "__main__":
+    '''
+    from sympy.parsing import mathematica
+    print mathematica.parse('1 - lm - (g0*Isp*Sqrt[Abs[lvx]^2 + Abs[lvy]^2 + Abs[lvz]^2])/m')
+    '''
+
     p = CRTBP()
-    traj = p.Shoot(p.s0, 100)
-    p.PlotTraj(traj,'2d')
-    p.PlotJacoabiConstant()
+    s = p.s0
+    c = array([0.5, 1/3., 2/3., 2/3.], float)
+    l = array([15, 32, -0.945, -0.101, 0.04479, -0.00015, 0.1332], float)
+    lx,ly,lz,lvx,lvy,lvz,lm = l
+    x,y,z,vx,vy,vz,m = s
+    u, ax, ay, az = c
+    fs = array([x,y,z,vx,vy,vz,m,lx,ly,lz,lvx,lvy,lvz,lm])
+    traj = p.Shoot(fs, 10)
+    p.PlotTraj(traj)
     plt.show()
