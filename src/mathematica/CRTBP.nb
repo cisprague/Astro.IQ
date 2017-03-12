@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     52087,       1578]
-NotebookOptionsPosition[     49372,       1479]
-NotebookOutlinePosition[     49711,       1494]
-CellTagsIndexPosition[     49668,       1491]
+NotebookDataLength[     51429,       1569]
+NotebookOptionsPosition[     48713,       1470]
+NotebookOutlinePosition[     49054,       1485]
+CellTagsIndexPosition[     49011,       1482]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -987,43 +987,6 @@ Cell[BoxData[
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"InputForm", "[", "d\[Lambda]", "]"}]], "Input",
- CellChangeTimes->{{3.697752907806118*^9, 3.6977529151876907`*^9}}],
-
-Cell["\<\
-{-(lvy*((3*mu*(-1 + mu + x)*y)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) + 
-     (3*(1 - mu)*(mu + x)*y)/((mu + x)^2 + y^2 + z^2)^(5/2))) - 
-  lvz*((3*mu*(-1 + mu + x)*z)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) - 
-    (3*(-1 + mu)*(mu + x)*z)/((mu + x)^2 + y^2 + z^2)^(5/2)) - 
-  lvx*(1 + (3*mu*(-1 + mu + x)^2)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) - 
-    mu/((-1 + mu + x)^2 + y^2 + z^2)^(3/2) + (3*(1 - mu)*(mu + x)^2)/((mu + \
-x)^2 + y^2 + z^2)^(5/2) - 
-    (1 - mu)/((mu + x)^2 + y^2 + z^2)^(3/2)), 
- -(lvx*((3*mu*(-1 + mu + x)*y)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) + 
-     (3*(1 - mu)*(mu + x)*y)/((mu + x)^2 + y^2 + z^2)^(5/2))) - 
-  lvz*((3*mu*y*z)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) - (3*(-1 + mu)*y*z)/
-     ((mu + x)^2 + y^2 + z^2)^(5/2)) - lvy*(1 + (3*mu*y^2)/((-1 + mu + x)^2 + \
-y^2 + z^2)^(5/2) - 
-    mu/((-1 + mu + x)^2 + y^2 + z^2)^(3/2) + (3*(1 - mu)*y^2)/((mu + x)^2 + \
-y^2 + z^2)^(5/2) - 
-    (1 - mu)/((mu + x)^2 + y^2 + z^2)^(3/2)), 
- -(lvx*((3*mu*(-1 + mu + x)*z)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) + 
-     (3*(1 - mu)*(mu + x)*z)/((mu + x)^2 + y^2 + z^2)^(5/2))) - 
-  lvy*((3*mu*y*z)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) + 
-    (3*(1 - mu)*y*z)/((mu + x)^2 + y^2 + z^2)^(5/2)) - 
-  lvz*((3*mu*z^2)/((-1 + mu + x)^2 + y^2 + z^2)^(5/2) - mu/((-1 + mu + x)^2 + \
-y^2 + z^2)^(3/2) - 
-    (3*(-1 + mu)*z^2)/((mu + x)^2 + y^2 + z^2)^(5/2) + (-1 + mu)/((mu + x)^2 \
-+ y^2 + z^2)^(3/2)), 
- 2*lvy - lx, -2*lvx - ly, -lz, (ax*lvx*T*u)/m^2 + (ay*lvy*T*u)/m^2 + \
-(az*lvz*T*u)/m^2}\
-\>", "Output",
- CellChangeTimes->{3.697752961684627*^9}]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
  RowBox[{"d\[Lambda]", "//", "MatrixForm"}]], "Input",
  CellChangeTimes->{{3.697736967055748*^9, 3.697736975555777*^9}, {
   3.697739274867544*^9, 3.697739275211981*^9}, {3.697739346176302*^9, 
@@ -1444,41 +1407,69 @@ Cell["Pontryagin Maximum Principle", "Subsubsection",
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"Normalize", "[", 
-  RowBox[{"{", 
-   RowBox[{"1", ",", "2", ",", "2"}], "}"}], "]"}]], "Input",
- CellChangeTimes->{{3.697741191813582*^9, 3.69774119962847*^9}}],
+ RowBox[{"S", " ", "=", " ", 
+  RowBox[{"Simplify", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", 
+      RowBox[{"Norm", "[", "lv", "]"}]}], "*", 
+     RowBox[{"c", "/", "m"}]}], " ", "-", " ", "lm", " ", "+", " ", "1"}], 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.69775520351486*^9, 3.69775523265694*^9}, {
+  3.697755335817512*^9, 3.6977553384253407`*^9}, {3.697755427040634*^9, 
+  3.697755431087841*^9}}],
 
 Cell[BoxData[
- RowBox[{"{", 
-  RowBox[{
-   FractionBox["1", "3"], ",", 
-   FractionBox["2", "3"], ",", 
-   FractionBox["2", "3"]}], "}"}]], "Output",
- CellChangeTimes->{3.6977412000320473`*^9, 3.697745664713653*^9, 
-  3.697752961779336*^9}]
+ RowBox[{"1", "-", "lm", "-", 
+  FractionBox[
+   RowBox[{"g0", " ", "Isp", " ", 
+    SqrtBox[
+     RowBox[{
+      SuperscriptBox[
+       RowBox[{"Abs", "[", "lvx", "]"}], "2"], "+", 
+      SuperscriptBox[
+       RowBox[{"Abs", "[", "lvy", "]"}], "2"], "+", 
+      SuperscriptBox[
+       RowBox[{"Abs", "[", "lvz", "]"}], "2"]}]]}], "m"]}]], "Output",
+ CellChangeTimes->{{3.697755204326124*^9, 3.69775523296587*^9}, 
+   3.697755338915565*^9, 3.697755431563168*^9, 3.697755769147019*^9}]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"Norm", "[", 
-  RowBox[{"{", 
-   RowBox[{
-    FractionBox["1", "3"], ",", 
-    FractionBox["2", "3"], ",", 
-    FractionBox["2", "3"]}], "}"}], "]"}]], "Input",
- NumberMarks->False],
+ RowBox[{"S", "//", "InputForm"}]], "Input",
+ CellChangeTimes->{{3.6977552346483793`*^9, 3.697755239267441*^9}}],
 
-Cell[BoxData["1"], "Output",
- CellChangeTimes->{3.6977412037342663`*^9, 3.697745664750811*^9, 
-  3.697752961826489*^9}]
+Cell["\<\
+1 - lm - (g0*Isp*Sqrt[Abs[lvx]^2 + Abs[lvy]^2 + Abs[lvz]^2])/m\
+\>", "Output",
+ CellChangeTimes->{3.697755239726836*^9, 3.6977553447361317`*^9, 
+  3.697755435651908*^9, 3.697755842832417*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"-", 
+   RowBox[{"Normalize", "[", "lv", "]"}]}], "//", "InputForm"}]], "Input",
+ CellChangeTimes->{{3.69775552517654*^9, 3.697755535801702*^9}, {
+  3.69775557351234*^9, 3.6977555765651083`*^9}}],
+
+Cell["\<\
+{-(lvx/Sqrt[Abs[lvx]^2 + Abs[lvy]^2 + Abs[lvz]^2]), -(lvy/Sqrt[Abs[lvx]^2 + \
+Abs[lvy]^2 + Abs[lvz]^2]), -(lvz/Sqrt[Abs[lvx]^2 + Abs[lvy]^2 + Abs[lvz]^2])}\
+\
+\>", "Output",
+ CellChangeTimes->{{3.6977555295632668`*^9, 3.69775553635175*^9}, 
+   3.6977555773092833`*^9, 3.697755786345993*^9}]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{960, 1041},
-WindowMargins->{{Automatic, -8}, {Automatic, -8}},
+WindowSize->{808, 911},
+WindowMargins->{{Automatic, 683}, {-214, Automatic}},
 FrontEndVersion->"10.4 for Linux x86 (64-bit) (February 25, 2016)",
 StyleDefinitions->"Default.nb"
 ]
@@ -1557,26 +1548,26 @@ Cell[CellGroupData[{
 Cell[18554, 587, 120, 1, 35, "Subsubsection"],
 Cell[CellGroupData[{
 Cell[18699, 592, 432, 9, 31, "Input"],
-Cell[19134, 603, 12543, 380, 514, "Output"]
+Cell[19134, 603, 12543, 380, 254, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[31714, 988, 139, 2, 31, "Input"],
-Cell[31856, 992, 1553, 28, 368, "Output"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[33446, 1025, 234, 4, 31, "Input"],
-Cell[33683, 1031, 14666, 403, 219, "Output"]
+Cell[31714, 988, 234, 4, 31, "Input"],
+Cell[31951, 994, 14666, 403, 219, "Output"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[48398, 1440, 119, 1, 35, "Subsubsection"],
+Cell[46666, 1403, 119, 1, 35, "Subsubsection"],
 Cell[CellGroupData[{
-Cell[48542, 1445, 184, 4, 31, "Input"],
-Cell[48729, 1451, 240, 7, 47, "Output"]
+Cell[46810, 1408, 425, 11, 31, "Input"],
+Cell[47238, 1421, 499, 13, 60, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[49006, 1463, 204, 7, 56, "Input"],
-Cell[49213, 1472, 119, 2, 31, "Output"]
+Cell[47774, 1439, 126, 2, 31, "Input"],
+Cell[47903, 1443, 201, 4, 45, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[48141, 1452, 229, 5, 31, "Input"],
+Cell[48373, 1459, 300, 6, 45, "Output"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
