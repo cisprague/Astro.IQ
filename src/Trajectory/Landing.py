@@ -1,10 +1,7 @@
 from numpy import *
-from PyGMO import *
-from PyGMO.problem import base
-from scipy.integrate import ode
-import matplotlib.pyplot as plt
 
-class PointLander(base):
+'''
+class AlphaPointLander(object):
     def __init__(self,
         si   = [0, 1000, 20, -5, 10000],
         st   = [0, 0, 0, 0, 9000],
@@ -42,6 +39,9 @@ class PointLander(base):
         elif self.meth is 'indirect':
             self.Indirect()
             self._compute_constraints_impl = self.Indirect_Constraints
+        elif self.meth is 'trap':
+            self.Trapezoidal()
+            self._compute_constraints_impl = self.Trapezoidal_Constraints
         else:
             pass
         if self.obj is 'mass':
@@ -125,7 +125,33 @@ class PointLander(base):
         ub, y, u, tf = self.Decode_NLP(decision)
         plt.plot(y[:,0], y[:,1], 'k.-')
         plt.show()
-
-if __name__ == "__main__":
-    sc = PointLander(nseg=4)
-    print sc.Decode_NLP(sc.ub)
+'''
+class PointLander(object):
+    def __init__(
+        self,
+        si  = [10, 1000, 20, -5, 10000],
+        st  = [0, 0, 0, 0, 9000],
+        Isp = 311,
+        g   = 1.6229,
+        T   = 44000
+    ):
+        self.si   = array(si, float)
+        self.st   = array(st, float)
+        self.Isp  = float(Isp)
+        self.g    = float(g)
+        self.T    = float(T)
+        self.sdim = 5
+        self.cdim = 3
+        self.slb  = [-500, 0, -200, -200, 0]
+        self.sub  = [500, 1000, 200, 200, 10000]
+        self.clb  = [0, -1, -1]
+        self.cub  = [1, 1, 1]
+        self.tlb  = [1]
+        self.tub  = [800]
+    def Optimise(self, method='trap', nsegs=20):
+        if method is 'trap':
+            Direct.Trapezoidal(self, nsegs)
+        elif method is 'RK':
+            Direct.Runge_Kutta(self, nsegs)
+        elif method is 'HS':
+            Direct.Hermite_Simpson(self, nsegs)
