@@ -1,6 +1,6 @@
 ''' --------
 Dependencies
-''' --------
+-------- '''
 from numpy import *
 from numpy.linalg import *
 from scipy.optimize import *
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 ''' ------------
 Solution Guesses
-''' ------------
+------------ '''
 class Guess(object):
     @staticmethod
     def Zeros(mesh):
@@ -39,7 +39,7 @@ class Guess(object):
 
 ''' ----------------------
 Direct Collocation Methods
-''' ----------------------
+---------------------- '''
 class Trapezoidal(base):
     def __init__(self, model=PointLander(), nsegs=20):
         self.nsegs  = nsegs
@@ -76,5 +76,5 @@ class Trapezoidal(base):
 
 if __name__ == "__main__":
     mesh = linspace(1, 20, 30)
-    plt.plot(Guess.Cubic(mesh, 20, 1, -10, 3))
+    plt.plot(Guess.Cubic(mesh, 20, 5, -10, -5))
     plt.show()

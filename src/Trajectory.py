@@ -1,6 +1,45 @@
 from numpy import *
 
-class PointLander(object):
+''' -----------
+Dynamical Model
+----------- '''
+class Dynamical_Model(object):
+    def __init__(self, si, st, slb, sub, clb, cub, tlb, tub):
+        self.si  , self.st    = array(si) , array(st)
+        self.slb , self.sub   = array(slb), array(sub)
+        self.clb , self.cub   = array(clb), array(cub)
+        self.tlb , self.tub   = array(tlb), array(tub)
+        self.sdim, self.cdim  = len(slb)  , len(clb)
+    def __repr__(self):
+        n, t = "\n", "\t"
+        lb, ub, dim = "Lower Bound: ", "Upper Bound: ", "Dimensions: "
+        s = "State" + n
+        s += t + dim + str(self.sdim) + n
+        s += t + "Initial: " + str(self.si) + n
+        s += t + "Target: " + str(self.st) + n
+        s += t + lb + str(self.slb) + n
+        s += t + ub + str(self.sub) + n
+        s += "Control" + n
+        s += t + dim + str(self.cdim) + n
+        s += t + lb + str(self.clb) + n
+        s += t + ub + str(self.cub) + n
+        s += "Time" + n
+        s += t + lb + str(self.tlb) + n
+        s += t + ub + str(self.tub) + n
+        return s
+    def EOM_State(self, state, control):
+        return None
+    def EOM_Jac(self, state, control):
+        return None
+    def EOM_Fullstate(self, fullstate, control):
+        return None
+    def EOM_Fullstate_Jac(self, fullstate, control):
+        return None
+
+''' ---
+Landers
+--- '''
+class Point_Lander(Dynamical_Model):
     def __init__(
         self,
         si  = [10, 1000, 20, -5, 10000],
@@ -14,16 +53,17 @@ class PointLander(object):
         self.T    = float(T)
         self.g0   = float(9.802)
         # For optimisation
-        self.si   = array(si, float)
-        self.st   = array(st, float)
-        self.sdim = 5
-        self.cdim = 3
-        self.slb  = [-500, 0, -200, -200, 0]
-        self.sub  = [500, 1000, 200, 200, 10000]
-        self.clb  = [0, -1, -1]
-        self.cub  = [1, 1, 1]
-        self.tlb  = [1]
-        self.tub  = [1000]
+        Dynamical_Model.__init__(
+            self,
+            si,
+            st,
+            [-500, 0, -200, -200, 0],
+            [500, 1000, 200, 200, 10000],
+            [0, -1, -1],
+            [1, 1, 1],
+            1,
+            1000
+        )
     def EOM_State(self, state, control):
         x, y, vx, vy, m = state
         u, st, ct       = control
@@ -47,3 +87,7 @@ class PointLander(object):
             [0, 0, 0, 0, -ct*x0/m],
             [0, 0, 0, 0,        0]
         ], float)
+
+if __name__ == "__main__":
+    Apollo = Point_Lander()
+    print Apollo.EOM_Fullstate(Apollo.sub, Apollo.cub)
