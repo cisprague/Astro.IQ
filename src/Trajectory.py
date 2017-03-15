@@ -5,10 +5,15 @@ Dynamical Model
 ----------- '''
 class Dynamical_Model(object):
     def __init__(self, si, st, slb, sub, clb, cub, tlb, tub):
+        # Initial and target state
         self.si  , self.st    = array(si) , array(st)
+        # Lower and upper state bounds
         self.slb , self.sub   = array(slb), array(sub)
+        # Lower and upper control bounds
         self.clb , self.cub   = array(clb), array(cub)
+        # Lower and upper time bounds
         self.tlb , self.tub   = array(tlb), array(tub)
+        # State and control space dimensions
         self.sdim, self.cdim  = len(slb)  , len(clb)
     def __repr__(self):
         n, t = "\n", "\t"
@@ -48,10 +53,10 @@ class Point_Lander(Dynamical_Model):
         g   = 1.6229,
         T   = 44000):
         # Problem parameters
-        self.Isp  = float(Isp)
-        self.g    = float(g)
-        self.T    = float(T)
-        self.g0   = float(9.802)
+        self.Isp  = float(Isp)   # Specific impulse [s]
+        self.g    = float(g)     # Environment's gravity [m/s^2]
+        self.T    = float(T)     # Maximum thrust [N]
+        self.g0   = float(9.802) # Earth's sea-level gravity [m/s^2]
         # For optimisation
         Dynamical_Model.__init__(
             self,
