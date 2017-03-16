@@ -108,7 +108,7 @@ class Trapezoidal(Direct, base):
 
 if __name__ == "__main__":
     apollo = Point_Lander()
-    problem = Trapezoidal(apollo)
+    problem = Trapezoidal(apollo, nsegs=50)
     tf, s, c = problem.Guess.Ballistic(tf=35, nlp=False)
-    plt.plot(s[:,0], s[:,1])
+    plt.plot(s[:,0], s[:,1], 'k.-')
     plt.show()
