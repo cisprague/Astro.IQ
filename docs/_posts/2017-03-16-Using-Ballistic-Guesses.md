@@ -3,7 +3,7 @@ title: "Using Ballistic Guesses"
 author: "Christopher Iliffe Sprague"
 ---
 
-In the process of *trajectory optimisation*, often the most severe bottleneck in performance manifests in supplying an *initial guess*. One of the simplest ways to supply an initial guess is to initialise the *nonlinear programme decision vector* $$\pmb{Z}$$ within the *state* and *control* space, $$\mathcal{S}$$ and $$\mathcal{U}$$ respectively. At first this may seem like a sufficient idea; however, if one brings their attention to the problem's dynamic constraints, this will certainly not work.
+In the process of *trajectory optimisation*, often the most severe bottleneck in performance manifests in supplying an *initial guess*. One of the simplest ways to supply an initial guess is to initialise the *nonlinear programme decision vector* $$\pmb{Z}$$ randomly within the *state* and *control* space, $$\mathcal{S}$$ and $$\mathcal{U}$$ respectively. At first this may seem like a sufficient idea; however, if one brings their attention to the problem's dynamic constraints, this will certainly be ineffective.
 
 Examining a two dimensional planetary lander, whose dynamics are governed by the first order system ordinary differential equations
 
@@ -39,12 +39,16 @@ $$
 \end{align}
 $$
 
-, it is quite unsurprising that a random distribution of state nodes is likely to prevent the optimiser from converging to a *feasible* solutions. A smarter way to provide a guess that looks more natural, with respect to the system's dynamics, is to provide a *ballistic guess*, that is an uncontrolled trajectory.
+, it is quite unsurprising that a random distribution of state nodes is likely to prevent the optimiser from converging to a *feasible* solutions. A smarter way to provide a guess that looks more natural, with respect to the system's dynamics, is to provide a *ballistic guess*, otherwise known as an uncontrolled trajectory.
 
-To do this one simply *propagates* or numerically integrates the system's dynamics from an initial state to an arbitrary *final time* $$t_f$$, and then samples $$M$$ evenly distributed nodes along the trajectory to subsequently input to the optimiser. However, one must ensure that all these nodes of the system's state are within the problem's state space bounds, that is $$\pmb{s}_k \forall k \in \{1,\dots,M\} \subset \mathcal{S} $$.
+To do this one simply *propagates* or numerically integrates the system's dynamics from an initial state to an arbitrary *final time* $$t_f$$, and then samples $$M$$ evenly distributed nodes along the trajectory to subsequently input to the optimiser. However, one must ensure that all these nodes of the system's state are within the problem's state space bounds, that is $$\pmb{s}_k \forall k \in \{1,\dots,M\} \in \mathcal{S} $$.
 
 ## Astro.IQ Implementation
-Within the [*Astro.IQ*](https://github.com/CISprague/Astro.IQ) framework, one can easily define their own dynamical model, choose an optimisation method, and subsequently solve the trajectory optimisation with any of the many algorithms of [*PyGMO*](https://github.com/esa/pagmo). One can employ this methodology through the following step:
+Within the [*Astro.IQ*](https://github.com/CISprague/Astro.IQ) framework, one can easily
+
+1. Define their own dynamical model
+2. Choose an optimisation method
+3. Optimise the trajectory with any [*PyGMO*](https://github.com/esa/pagmo) algorithm.
 
 One first imports the necessary resources
 
@@ -73,7 +77,7 @@ $$ \pmb{s}_k^\intercal = {[x,y,v_x,v_y,m]}_k \in \mathcal{S} $$
 
 and the *control* by
 
-$$ \pmb{c}_k^\intercal = {[u, \hat{u}_x, \hat{u}_u]}_k \in \mathcal{U}$$
+$$ \pmb{c}_k^\intercal = {[u, \hat{u}_x, \hat{u}_y]}_k \in \mathcal{U}$$
 
 . In this transcription, the *dynamic constraints* are enforced by *equality constraints* given by the trapezoidal quadrature
 
@@ -130,7 +134,7 @@ A space for any number of *decision* vectors is allotted:
 pop = population(Problem)
 ```
 
-A *decision vector* $$\pmb{Z}$$ is generated
+A ballistic *decision vector* $$\pmb{Z}$$ is generated
 
 ```python
 # Provide a ballistic (uncontrolled) trajectory as an initial guess
@@ -144,7 +148,7 @@ zguess = Problem.Guess.Ballistic(tf=20)
 pop.push_back(zguess)
 ```
 
-The *decision vector* is the evolved through the *gradient based* optimizer until an error tolerance is satisfied, both with respect to the *boundary conditions* and *dynamic constraints*.
+The *decision vector* is then evolved through the *gradient based* optimiser until an error tolerance is satisfied, both with respect to the *boundary conditions* (i.e. arriving at the *target state*) and *dynamic constraints* (i.e. abiding to the equations of motions).
 
 ```python
 # Evolve the individual with SLSQP
@@ -187,11 +191,11 @@ plt.show()
 ![png]({{ site.baseurl }}/assets/Guessing_files/Guessing_13_0.png)
 
 #### Control
-From *optimal control* theory, one can analyse how the nature of the system's control should behave. One introduces a vector of non physical *costate* variables
+From *optimal control* theory, one can analyse how the nature of the system's control should behave. There is a vector of non physical *costate* variables
 
 $$ \pmb{\lambda}^\intercal = [\lambda_x, \lambda_y, \lambda_{v_x}, \lambda_{v_y}, \lambda_m] $$
 
-and subsequently defines the system's *Hamiltonian*
+, from which the system's *Hamiltonian* is defined
 
 $$ \mathcal{H} = \pmb{\lambda}^\intercal \dot{\pmb{s}} + \mathcal{L} $$
 
@@ -201,13 +205,13 @@ $$
 \mathcal{L} = T u
 $$
 
-. From [*Pontryagin's maximum principle*](https://en.wikipedia.org/wiki/Pontryagin's_maximum_principle), which requires that the *Hamiltonian* must be maximized over the set of all possible controls $$\mathcal{U}$$
+. From [*Pontryagin's maximum principle*](https://en.wikipedia.org/wiki/Pontryagin's_maximum_principle), one notes that the *Hamiltonian* must be maximized over the set of all possible controls
 
 $$
 H(\pmb{s}^\star_k,\pmb{c}^\star_k,\lambda^\star_k)\leq H(\pmb{s}^\star_k,\pmb{c},\lambda^\star_k)~\forall \pmb{c} \in \mathcal{U}
 $$
 
-, one finds that optimal throttle is
+, and hence the optimal throttle policy is found as
 
 $$
 u =
@@ -223,7 +227,7 @@ $$
 
 $$ S = \frac{I_{sp} g_0 \sqrt{\lambda_{v_x}^2 + \lambda_{v_y}^2}}{m} - \lambda_m $$
 
-. Hence this describes what is known as *bang-bang control*, which is characteristic of *mass-optimal control*, where the throttle is either on or off. Plotting the throttle sequence of the planetary lander in this example, it can be seen that this nature is followed, with the exception of some intermediate values due to the problem's discretisation.
+. Hence this describes what is known as *bang-bang control*, which is characteristic of *mass-optimal control* policies, where the throttle is either on or off. Plotting the lander's throttle sequence, it can be seen that this behaviour is emulated, with the exception of a few intermediate values due to the problem's discretisation.
 
 
 ```python
@@ -237,7 +241,7 @@ plt.show()
 
 ![png]({{ site.baseurl }}/assets/Guessing_files/Guessing_14_0.png)
 
-The fuel expenditure is the plotted:
+One can also see the lander's fuel expenditure along its trajecory:
 
 ```python
 # Plot the propellent usage
@@ -252,7 +256,7 @@ plt.show()
 
 #### Soft Landing?
 
-The lander not only met its target position, but it also landed softly as specified.
+The lander not only met its *target position*, but it also landed softly, meeting its *target velocity* as desired.
 
 ```python
 # Soft landing
@@ -268,5 +272,10 @@ plt.show()
 ![png]({{ site.baseurl }}/assets/Guessing_files/Guessing_16_0.png)
 
 
-## Source Code
-Have a look at the fill IPython notebook [here](https://github.com/CISprague/Astro.IQ/blob/master/src/Notebook/Guessing.ipynb)
+## Want to learn more?
+Have a look at the following resources:
+
+* [Astro.IQ](https://github.com/CISprague/Astro.IQ) - for the source code of this software
+* [Full IPython notebook](https://github.com/CISprague/Astro.IQ/blob/master/src/Notebook/Guessing.ipynb) - for how I did this example
+* [Practical Methods for Optimal Control Using Nonlinear Programming](https://www.amazon.com/Practical-Methods-Nonlinear-Programming-Advances/dp/0898714885) - to learn about optimal control methods
+* [Python Parallel Global Multiobjective Optimizer (PyGMO)](http://esa.github.io/pygmo/) - to learn about the optimisation platform used
