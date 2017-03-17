@@ -6,6 +6,264 @@
 		<atom:link href="https://cisprague.github.io/feed.xml" rel="self" type="application/rss+xml" />
 		
 			<item>
+				<title>Using Ballistic Guesses</title>
+        <description>&lt;p&gt;In the process of &lt;em&gt;trajectory optimisation&lt;/em&gt;, often the most severe bottleneck in performance manifests in supplying an &lt;em&gt;initial guess&lt;/em&gt;. One of the simplest ways to supply an initial guess is to initialise the &lt;em&gt;nonlinear programme decision vector&lt;/em&gt; &lt;script type=&quot;math/tex&quot;&gt;\pmb{Z}&lt;/script&gt; within the &lt;em&gt;state&lt;/em&gt; and &lt;em&gt;control&lt;/em&gt; space, &lt;script type=&quot;math/tex&quot;&gt;\mathcal{S}&lt;/script&gt; and &lt;script type=&quot;math/tex&quot;&gt;\mathcal{U}&lt;/script&gt; respectively. At first this may seem like a sufficient idea; however, if one brings their attention to the problem’s dynamic constraints, this will certainly not work.&lt;/p&gt;
+
+&lt;p&gt;Examining a two dimensional planetary lander, whose dynamics are governed by the first order system ordinary differential equations&lt;/p&gt;
+
+&lt;p&gt;&lt;script type=&quot;math/tex&quot;&gt;\dot{\pmb{s}} =
+\begin{bmatrix}
+\dot{x} \\
+\dot{y} \\
+\dot{v}_x \\
+\dot{v}_y \\
+\dot{m}
+\end{bmatrix}
+=
+\begin{bmatrix}
+v_x \\
+v_y \\
+\frac{T u}{m} \hat{u}_x \\
+\frac{T u}{m} \hat{u}_y - g\\
+-\frac{T}{I_{sp}g_0}
+\end{bmatrix}&lt;/script&gt;
+&lt;script type=&quot;math/tex&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\text{Position: } &amp; \pmb{r} = [x, y] \\
+\text{Velocity: } &amp; \pmb{v} = [v_x, v_y] \\
+\text{Mass: } &amp; m = 9500~kg \\
+\text{Maximum Thrust: } &amp; T = 44000~N \\
+\text{Throttle: } &amp; u \in [0, 1] \\
+\text{Thrust Direction: } &amp; \hat{\pmb{u}} = [\hat{u}_x, \hat{u}_y] \in [-1, 1] \\
+\text{Moon Gravity: } &amp; g = 1.6229~m/s^2 \\
+\text{Earth Gravity: } &amp; g_0 = 9.802~m/s^2 \\
+\text{Specific Impulse: } &amp; I_{sp} = 311~s
+\end{align} %]]&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;, it is quite unsurprising that a random distribution of state nodes is likely to prevent the optimiser from converging to a &lt;em&gt;feasible&lt;/em&gt; solutions. A smarter way to provide a guess that looks more natural, with respect to the system’s dynamics, is to provide a &lt;em&gt;ballistic guess&lt;/em&gt;, that is an uncontrolled trajectory.&lt;/p&gt;
+
+&lt;p&gt;To do this one simply &lt;em&gt;propagates&lt;/em&gt; or numerically integrates the system’s dynamics from an initial state to an arbitrary &lt;em&gt;final time&lt;/em&gt; &lt;script type=&quot;math/tex&quot;&gt;t_f&lt;/script&gt;, and then samples &lt;script type=&quot;math/tex&quot;&gt;M&lt;/script&gt; evenly distributed nodes along the trajectory to subsequently input to the optimiser. However, one must ensure that all these nodes of the system’s state are within the problem’s state space bounds, that is &lt;script type=&quot;math/tex&quot;&gt;\pmb{s}_k \forall k \in \{1,\dots,M\} \subset \mathcal{S}&lt;/script&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;astroiq-implementation&quot;&gt;Astro.IQ Implementation&lt;/h2&gt;
+&lt;p&gt;Within the &lt;a href=&quot;https://github.com/CISprague/Astro.IQ&quot;&gt;&lt;em&gt;Astro.IQ&lt;/em&gt;&lt;/a&gt; framework, one can easily define their own dynamical model, choose an optimisation method, and subsequently solve the trajectory optimisation with any of the many algorithms of &lt;a href=&quot;https://github.com/esa/pagmo&quot;&gt;&lt;em&gt;PyGMO&lt;/em&gt;&lt;/a&gt;. One can employ this methodology through the following step:&lt;/p&gt;
+
+&lt;p&gt;One first imports the necessary resources&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Trajectory&lt;/span&gt;   &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Point_Lander&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Optimisation&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Trapezoidal&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;then instantiates the dynamical model.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Instantiate a dynamical model and look at details&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Model&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Point_Lander&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;optimisation-transcription&quot;&gt;Optimisation Transcription&lt;/h3&gt;
+&lt;p&gt;The problem is then transcribed with a chosen optimisation method. In this case the &lt;em&gt;trapezoidal transcription&lt;/em&gt; method is used, where the &lt;em&gt;decision vector&lt;/em&gt; is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\pmb{Z}^\intercal = [\pmb{s}_1, \pmb{c}_1, \dots, \pmb{s}_M, \pmb{c}_M]&lt;/script&gt;
+
+&lt;p&gt;, where the system’s &lt;em&gt;state&lt;/em&gt; is given by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\pmb{s}_k^\intercal = {[x,y,v_x,v_y,m]}_k \in \mathcal{S}&lt;/script&gt;
+
+&lt;p&gt;and the &lt;em&gt;control&lt;/em&gt; by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\pmb{c}_k^\intercal = {[u, \hat{u}_x, \hat{u}_u]}_k \in \mathcal{U}&lt;/script&gt;
+
+&lt;p&gt;. In this transcription, the &lt;em&gt;dynamic constraints&lt;/em&gt; are enforced by &lt;em&gt;equality constraints&lt;/em&gt; given by the trapezoidal quadrature&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\pmb{\zeta}_k = \pmb{s}_{k+1} - \pmb{s}_k - \frac{t_{k+1} - t_k}{2}(\dot{\pmb{s}}_k + \dot{\pmb{s}}_{k+1}) \forall k \in [1, N]&lt;/script&gt;
+
+&lt;p&gt;, where &lt;script type=&quot;math/tex&quot;&gt;N=M-1&lt;/script&gt; is the number of segments the trajectory is divided into.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Create a trajectory optimisation problem and look at details&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Problem&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Trapezoidal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nsegs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;50&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;taking-a-guess&quot;&gt;Taking a Guess&lt;/h3&gt;
+&lt;p&gt;One can show what a &lt;em&gt;ballistic trajectory&lt;/em&gt; with a &lt;script type=&quot;math/tex&quot;&gt;t_f = 20~s&lt;/script&gt; flight time looks like, where the problem’s number of nodes is implicitly passed to the guessing method:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Guess from a ballistic (uncontrolled) trajectory&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;tf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;control&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Problem&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Guess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Ballistic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nlp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Visualise the guess&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;matplotlib.pyplot&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;plt&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;k.-&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# Trajectory&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Altitude [m]&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Cross Range [m]&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;show&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Guessing_files/Guessing_5_0.png&quot; alt=&quot;png&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;optimising-the-trajectory&quot;&gt;Optimising the Trajectory&lt;/h3&gt;
+
+&lt;p&gt;The optimiser is imported&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Import PyGMO for optimisation&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;PyGMO&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;wherein the method of &lt;a href=&quot;https://en.wikipedia.org/wiki/Sequential_quadratic_programming&quot;&gt;&lt;em&gt;sequential least squares quadratic programming&lt;/em&gt;&lt;/a&gt; is used:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Use sequential least squares quadratic programming&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;algo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;algorithm&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scipy_slsqp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;max_iter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;screen_output&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;A space for any number of &lt;em&gt;decision&lt;/em&gt; vectors is allotted:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Create an empty population space for individuals (decision vectors) to inhabit&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;pop&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;population&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Problem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;A &lt;em&gt;decision vector&lt;/em&gt; &lt;script type=&quot;math/tex&quot;&gt;\pmb{Z}&lt;/script&gt; is generated&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Provide a ballistic (uncontrolled) trajectory as an initial guess&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;zguess&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Problem&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Guess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Ballistic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;, and subsequently added as a &lt;em&gt;chromosome&lt;/em&gt; to the space.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Add the guess to the population&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;pop&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;push_back&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;zguess&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The &lt;em&gt;decision vector&lt;/em&gt; is the evolved through the &lt;em&gt;gradient based&lt;/em&gt; optimizer until an error tolerance is satisfied, both with respect to the &lt;em&gt;boundary conditions&lt;/em&gt; and &lt;em&gt;dynamic constraints&lt;/em&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Evolve the individual with SLSQP&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;pop&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;algo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;evolve&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pop&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  NIT    FC           OBJFUN            GNORM
+    1   411    -9.500000E+03     1.000000E+00
+    2   832    -9.500000E+03     1.000000E+00
+    3  1250    -9.500000E+03     1.000000E+00
+    4  1671    -9.500000E+03     1.000000E+00
+    ⋮   ⋮           ⋮                ⋮
+  627 257760    -9.242340E+03     1.000000E+00
+  628 258175    -9.242340E+03     1.000000E+00
+  629 258590    -9.242340E+03     1.000000E+00
+  630 259005    -9.242340E+03     1.000000E+00
+Optimization terminated successfully.    (Exit mode 0)
+            Current function value: -9242.33995699
+            Iterations: 630
+            Function evaluations: 259006
+            Gradient evaluations: 629
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The optimised &lt;em&gt;decision vector&lt;/em&gt; is then decoded into the total flight time &lt;script type=&quot;math/tex&quot;&gt;t_f&lt;/script&gt;, the state trajectory &lt;script type=&quot;math/tex&quot;&gt;\pmb{s}_k \forall k&lt;/script&gt;, and the sequence of controls &lt;script type=&quot;math/tex&quot;&gt;\pmb{c}_k \forall k&lt;/script&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;tf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Problem&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Decode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pop&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;champion&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;trajectory-evaluation&quot;&gt;Trajectory Evaluation&lt;/h3&gt;
+
+&lt;p&gt;Examining the plot of the optimised position trajectory, the optimisation process seems to have been quite effective.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# x vs. y&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;k.-&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Cross range [m]&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Altitude [m]&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;show&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Guessing_files/Guessing_13_0.png&quot; alt=&quot;png&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;control&quot;&gt;Control&lt;/h4&gt;
+&lt;p&gt;From &lt;em&gt;optimal control&lt;/em&gt; theory, one can analyse how the nature of the system’s control should behave. One introduces a vector of non physical &lt;em&gt;costate&lt;/em&gt; variables&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\pmb{\lambda}^\intercal = [\lambda_x, \lambda_y, \lambda_{v_x}, \lambda_{v_y}, \lambda_m]&lt;/script&gt;
+
+&lt;p&gt;and subsequently defines the system’s &lt;em&gt;Hamiltonian&lt;/em&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{H} = \pmb{\lambda}^\intercal \dot{\pmb{s}} + \mathcal{L}&lt;/script&gt;
+
+&lt;p&gt;, where the system’s &lt;em&gt;Lagrangian&lt;/em&gt; or &lt;em&gt;cost functional&lt;/em&gt; is defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{L} = T u&lt;/script&gt;
+
+&lt;p&gt;. From &lt;a href=&quot;https://en.wikipedia.org/wiki/Pontryagin&#39;s_maximum_principle&quot;&gt;&lt;em&gt;Pontryagin’s maximum principle&lt;/em&gt;&lt;/a&gt;, which requires that the &lt;em&gt;Hamiltonian&lt;/em&gt; must be maximized over the set of all possible controls &lt;script type=&quot;math/tex&quot;&gt;\mathcal{U}&lt;/script&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;H(\pmb{s}^\star_k,\pmb{c}^\star_k,\lambda^\star_k)\leq H(\pmb{s}^\star_k,\pmb{c},\lambda^\star_k)~\forall \pmb{c} \in \mathcal{U}&lt;/script&gt;
+
+&lt;p&gt;, one finds that optimal throttle is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+u =
+\left\{
+\begin{align}
+1 \text{ if } S &lt; 0\\
+0 \text{ if } S &gt; 0
+\end{align}
+\right. %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;, where the &lt;em&gt;switching function&lt;/em&gt; is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;S = \frac{I_{sp} g_0 \sqrt{\lambda_{v_x}^2 + \lambda_{v_y}^2}}{m} - \lambda_m&lt;/script&gt;
+
+&lt;p&gt;. Hence this describes what is known as &lt;em&gt;bang-bang control&lt;/em&gt;, which is characteristic of &lt;em&gt;mass-optimal control&lt;/em&gt;, where the throttle is either on or off. Plotting the throttle sequence of the planetary lander in this example, it can be seen that this nature is followed, with the exception of some intermediate values due to the problem’s discretisation.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Controls (note the bang-off-bang profile indicative of mass optimal control)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;k.-&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Throttle $u &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;in [0,1]$&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Node Index&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;show&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Guessing_files/Guessing_14_0.png&quot; alt=&quot;png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The fuel expenditure is the plotted:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Plot the propellent usage&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;k.-&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Mass [kg]&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Node Index&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;show&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Guessing_files/Guessing_15_0.png&quot; alt=&quot;png&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;soft-landing&quot;&gt;Soft Landing?&lt;/h4&gt;
+
+&lt;p&gt;The lander not only met its target position, but it also landed softly as specified.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Soft landing&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;k.-&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;k.--&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;legend&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;([&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;$v_x$&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;$v_y$&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Node Index&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Velocity [m/s]&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;plt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;show&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Guessing_files/Guessing_16_0.png&quot; alt=&quot;png&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;source-code&quot;&gt;Source Code&lt;/h2&gt;
+&lt;p&gt;Have a look at the fill IPython notebook &lt;a href=&quot;https://github.com/CISprague/Astro.IQ/blob/master/src/Notebook/Guessing.ipynb&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
+</description>
+				<pubDate>Thu, 16 Mar 2017 00:00:00 -0400</pubDate>
+				<link>https://cisprague.github.io/2017/03/16/Using-Ballistic-Guesses/</link>
+				<guid isPermaLink="true">https://cisprague.github.io/2017/03/16/Using-Ballistic-Guesses/</guid>
+			</item>
+		
+			<item>
 				<title>Indirect Trajectory Optimization for Cislunar Trajectories</title>
         <description>&lt;h2 id=&quot;objective&quot;&gt;Objective&lt;/h2&gt;
 &lt;p&gt;Find the sequence of thrusts &lt;script type=&quot;math/tex&quot;&gt;\pmb{u}(t)\forall t \in [t_I,t_F]&lt;/script&gt; to take a spacecraft from an orbit about Earth at time &lt;script type=&quot;math/tex&quot;&gt;t_I&lt;/script&gt; to an orbit about the &lt;script type=&quot;math/tex&quot;&gt;\mathcal{L}_2&lt;/script&gt; &lt;em&gt;Lagrange point&lt;/em&gt; at time &lt;script type=&quot;math/tex&quot;&gt;t_F&lt;/script&gt;, while minimizing the total amount of expended fuel &lt;script type=&quot;math/tex&quot;&gt;m(t_F)&lt;/script&gt;.&lt;/p&gt;

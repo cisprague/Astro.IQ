@@ -53,33 +53,33 @@
 <div class="content page">
   <h1 class="page-title">Tutorials</h1>
   <h2 id="its-as-easy-as-this">It’s as easy as this</h2>
-<p>```python
-#Import the necessary modules
-from context import Massive_Body
-#Instantiate Earth as a massive celestial object
-Earth = Celestial_Body(‘Earth’)
-#Instantiate Mars as a massive celestial object
-Mars = Celestial_Body(‘Mars’)
-#Instantiate the debris fragment as an orbital body
-Sat = Earth.Satellites.Fengyun_1C.Fengyun_1C_Deb_102
-#Times at which to compute position and velocity
-times = [2457061.5, 2457062.5, 2457063.5, 2457064.5]
-#Compute the position and velocity of the debris
-#fragment with respect to the centre of Mars.
-p, v = Sat.Position_and_Velocity_WRT(Mars, times[0])</p>
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="c">#Import the necessary modules</span>
+<span class="kn">from</span> <span class="nn">context</span> <span class="kn">import</span> <span class="n">Massive_Body</span>
+<span class="c">#Instantiate Earth as a massive celestial object</span>
+<span class="n">Earth</span> <span class="o">=</span> <span class="n">Celestial_Body</span><span class="p">(</span><span class="s">'Earth'</span><span class="p">)</span>
+<span class="c">#Instantiate Mars as a massive celestial object</span>
+<span class="n">Mars</span> <span class="o">=</span> <span class="n">Celestial_Body</span><span class="p">(</span><span class="s">'Mars'</span><span class="p">)</span>
+<span class="c">#Instantiate the debris fragment as an orbital body</span>
+<span class="n">Sat</span> <span class="o">=</span> <span class="n">Earth</span><span class="o">.</span><span class="n">Satellites</span><span class="o">.</span><span class="n">Fengyun_1C</span><span class="o">.</span><span class="n">Fengyun_1C_Deb_102</span>
+<span class="c">#Times at which to compute position and velocity</span>
+<span class="n">times</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2457061.5</span><span class="p">,</span> <span class="mf">2457062.5</span><span class="p">,</span> <span class="mf">2457063.5</span><span class="p">,</span> <span class="mf">2457064.5</span><span class="p">]</span>
+<span class="c">#Compute the position and velocity of the debris</span>
+<span class="c">#fragment with respect to the centre of Mars.</span>
+<span class="n">p</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">Sat</span><span class="o">.</span><span class="n">Position_and_Velocity_WRT</span><span class="p">(</span><span class="n">Mars</span><span class="p">,</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-<h1 id="show-results">Show results</h1>
-<p>print(‘The position [km] and velocity [km/s] of’)
-print(‘Fengyun_1C_Deb_102 with respect to the centre of Mars:’)
-print(‘Position:’), p * 1e-3
-print(‘Velocity: ‘), v * 1e-3
-<code class="highlighter-rouge">
-</code>
-The position [km] and velocity [km/s] of
+<span class="c">#Show results</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'The position [km] and velocity [km/s] of'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Fengyun_1C_Deb_102 with respect to the centre of Mars:'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Position:'</span><span class="p">),</span> <span class="n">p</span> <span class="o">*</span> <span class="mf">1e-3</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Velocity: '</span><span class="p">),</span> <span class="n">v</span> <span class="o">*</span> <span class="mf">1e-3</span>
+</code></pre>
+</div>
+<div class="highlighter-rouge"><pre class="highlight"><code>The position [km] and velocity [km/s] of
 Fengyun_1C_Deb_102 with respect to the centre of Mars:
 Position: [ -3.16064398e+08   4.67978840e+07   2.47605342e+07]
 Velocity:  [-15.22992539 -49.26948181 -14.59125297]
-```</p>
+</code></pre>
+</div>
 
 </div>
 

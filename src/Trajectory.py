@@ -107,7 +107,7 @@ Landers
 class Point_Lander(Dynamical_Model):
     def __init__(
         self,
-        si  = [10, 1000, 20, -5, 9000],
+        si  = [10, 1000, 20, -5, 9500],
         st  = [0, 0, 0, 0, 8000],
         Isp = 311,
         g   = 1.6229,
@@ -124,7 +124,7 @@ class Point_Lander(Dynamical_Model):
             st,
             [-500, 0, -200, -200, 0],
             [500, 1000, 200, 200, 10000],
-            [-0.001, -1, -1],
+            [-0.001, -1, -0.001],
             [1, 1, 1],
             1,
             200
@@ -140,7 +140,6 @@ class Point_Lander(Dynamical_Model):
             ct*x0 - self.g,
             -self.T*u/(self.Isp*self.g0)
         ], float)
-        return ds
     def EOM_State_Jac(self, state, control):
         x, y, vx, vy, m = state
         u, st, ct       = control

@@ -15,7 +15,11 @@ baseurl:            "/Astro.IQ"
 permalink:          /:year/:month/:day/:title/
 
 # Markdown
+highlighter:        rouge
 markdown:           kramdown
+kramdown:
+  input:            GFM
+  hard_wrap:        false
 
 # Navigation
 nav:
