@@ -12,11 +12,12 @@ A housefly is a rather simple organism, yet it is able to independently make dec
 This library aims to implement various *machine learning* and *computational intelligence* techniques in a variety of common *astrodynamics* applications.
 
 ## Applications
-- [ ] Planetary Landings
+- [X] Planetary Landings
 - [ ] Cislunar Trajectories
 - [ ] Interplanetary Trajectories
 
 ## Trajectory Optimisation Architectures
+- [X] Trapezoidal Transcription
 - [ ] High Fidelity Low-Thrust Direct Transcription <b id="r1">(Yam et al.)</b>
 - [ ] Sims and Flanagan Direct Transcription <b id="r2">(Sims et al.)</b>
 
