@@ -97,51 +97,51 @@ class Point_Lander(Dynamical_Model):
         )
     def EOM_State(self, state, control):
         x, y, vx, vy, m = state
-        u, st, ct       = control
+        u, ux, uy       = control
         x0 = self.T*u/m
         return array([
             vx,
             vy,
-            st*x0,
-            ct*x0 - self.g,
+            ux*x0,
+            uy*x0 - self.g,
             -self.T*u/(self.Isp*self.g0)
         ], float)
     def EOM_State_Jac(self, state, control):
         x, y, vx, vy, m = state
-        u, st, ct       = control
+        u, ux, uy       = control
         x0              = self.T*u/m**2
         return array([
             [0, 0, 1, 0,        0],
             [0, 0, 0, 1,        0],
-            [0, 0, 0, 0, -st*x0/m],
-            [0, 0, 0, 0, -ct*x0/m],
+            [0, 0, 0, 0, -ux*x0/m],
+            [0, 0, 0, 0, -uy*x0/m],
             [0, 0, 0, 0,        0]
         ], float)
     def EOM_Fullstate(self, fullstate, control):
         x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
-        u, st, ct     = control
+        u, ux, uy     = control
         T, Isp, g0, g = self.T, self.Isp, self.g0, self.g
         x0            = T*u/m
         x1            = T*u/m**2
         return array([
             [                   vx],
             [                   vy],
-            [                st*x0],
-            [            ct*x0 - g],
+            [                ux*x0],
+            [            uy*x0 - g],
             [        -T*u/(Isp*g0)],
             [                    0],
             [                    0],
             [                  -lx],
             [                  -ly],
-            [ct*lvy*x1 + lvx*st*x1]
+            [uy*lvy*x1 + lvx*ux*x1]
         ], float)
     def EOM_Fullstate_Jac(self, fullstate, control):
         x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
-        u, st, ct = control
+        u, ux, uy = control
         T         = self.T
         x0        = T*u/m**2
-        x1        = st*x0
-        x2        = ct*x0
+        x1        = ux*x0
+        x2        = uy*x0
         x3        = 2*T*u/m**3
         return array([
             [0, 0, 1, 0,                      0,  0,  0,  0,  0, 0],
@@ -153,26 +153,26 @@ class Point_Lander(Dynamical_Model):
             [0, 0, 0, 0,                      0,  0,  0,  0,  0, 0],
             [0, 0, 0, 0,                      0, -1,  0,  0,  0, 0],
             [0, 0, 0, 0,                      0,  0, -1,  0,  0, 0],
-            [0, 0, 0, 0, -ct*lvy*x3 - lvx*st*x3,  0,  0, x1, x2, 0]
+            [0, 0, 0, 0, -uy*lvy*x3 - lvx*ux*x3,  0,  0, x1, x2, 0]
         ], float)
     def Hamiltonian(self, fullstate):
         x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
         T, Isp, g0, g = self.T, self.Isp, self.g0, self.g
         x0 = T*u/m
         x1 = 1/(Isp*g0)
-        H  = -T*lvm*u*x1 + lvx*st*x0 + lvy*(ct*x0 - g) + lx*vx + ly*vy
+        H  = -T*lvm*u*x1 + lvx*ux*x0 + lvy*(uy*x0 - g) + lx*vx + ly*vy
         H += x1*(T**2*u**2*(-a + 1) + a*(T*u)) # The Lagrangian
         return H
     def Pontryagin(self, fullstate):
         x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
         lv = sqrt(abs(lvx)**2 + abs(lvy)**2)
-        st = -lvx/lv
-        ct = -lvy/lv
+        ux = -lvx/lv
+        uy = -lvy/lv
         u  = -self.Isp*self.g0*lv/m + lm - self.a
         u /= 2*self.T*(1 - self.a)
         u  = max(u, 0)
         u  = min(u, 1)
-        return u, st, ct
+        return u, ux, uy
 
 
 class Rocket_Lander(Dynamical_Model):
