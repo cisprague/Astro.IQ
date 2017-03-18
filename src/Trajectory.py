@@ -9,7 +9,7 @@ https://cisprague.github.io/Astro.IQ
 Dependencies
 -------- '''
 from numpy import *
-from scipy.integrate import ode, odeint
+from scipy.integrate import odeint
 
 ''' -----------
 Dynamical Model
@@ -49,10 +49,6 @@ class Dynamical_Model(object):
         return None
     def EOM_State_Jac(self, state, control):
         return None
-    def EOM_Costate(self, fullstate, control):
-        return None
-    def EOM_Costate_Jac(self, fullstate, control):
-        return None
     def Safe(self, state):
         for cond in state <= self.sub:
             if cond: pass
@@ -61,45 +57,15 @@ class Dynamical_Model(object):
             if cond: pass
             else: return False
         return True
-
-''' ------
-Propogator
------- '''
-class Propagate(object):
-    def __init__(self, model):
-        self.model = model
-    def Ballistic_Beta(self, si=None, tf=None, adaptive=True):
-        if si is None: si = self.model.si
-        if tf is None: tf = self.model.tub
-        solver = ode(self.EOM_Ballistic, self.EOM_Ballistic_Jac)
-        solver.set_initial_value(si, 0)
-        solver.set_f_params(zeros(self.model.cdim))
-        if adaptive:
-            solver.set_integrator('dop853', nsteps=1, atol=1e-14, rtol=1e-14, beta=0.1) # RK 8(5,3)
-        else:
-            pass
-        t, state = [], []
-        while self.model.Safe(solver.y) and solver.t < tf:
-            solver.integrate(tf, step=True)
-            t.append(solver.t)
-            state.append(solver.y)
-        return array(t), array(state)
-    def Ballistic(self, si=None, tf=None, nnodes=None):
-        if si is None: si = self.model.si
-        if tf is None: tf = self.model.tub
-        return odeint(
-            self.EOM,
-            si,
-            linspace(0,tf, nnodes),
-            Dfun = self.EOM_Jac,
-            rtol = 1e-12,
-            atol = 1e-12,
-            args = (zeros(self.model.cdim),) # No control
-        )
-    def EOM(self, state, t, control):
-        return self.model.EOM_State(state, control)
-    def EOM_Jac(self, state, t, control):
-        return self.model.EOM_State_Jac(state, control)
+    # For Indirect Methods
+    def EOM_Fullstate(self, fullstate, control):
+        return None
+    def EOM_Fullstate_Jac(self, fullstate, control):
+        return None
+    def Hamiltonian(self, fullstate):
+        return None
+    def Pontryagin(self, fullstate):
+        return None
 
 ''' ---
 Landers
@@ -117,13 +83,14 @@ class Point_Lander(Dynamical_Model):
         self.g    = float(g)     # Environment's gravity [m/s^2]
         self.T    = float(T)     # Maximum thrust [N]
         self.g0   = float(9.802) # Earth's sea-level gravity [m/s^2]
+        self.a    = float(0)
         # For optimisation
         Dynamical_Model.__init__(
             self,
             si,
             st,
-            [-500, 0, -200, -200, 0],
-            [500, 1000, 200, 200, 10000],
+            [-1000, 0, -500, -500, 0],
+            [1000, 2000, 500, 500, 10000],
             [-0.001, -1, -0.001],
             [1, 1, 1],
             1,
@@ -151,6 +118,64 @@ class Point_Lander(Dynamical_Model):
             [0, 0, 0, 0, -ct*x0/m],
             [0, 0, 0, 0,        0]
         ], float)
+    def EOM_Fullstate(self, fullstate, control):
+        x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
+        u, st, ct     = control
+        T, Isp, g0, g = self.T, self.Isp, self.g0, self.g
+        x0            = T*u/m
+        x1            = T*u/m**2
+        return array([
+            [                   vx],
+            [                   vy],
+            [                st*x0],
+            [            ct*x0 - g],
+            [        -T*u/(Isp*g0)],
+            [                    0],
+            [                    0],
+            [                  -lx],
+            [                  -ly],
+            [ct*lvy*x1 + lvx*st*x1]
+        ], float)
+    def EOM_Fullstate_Jac(self, fullstate, control):
+        x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
+        u, st, ct = control
+        T         = self.T
+        x0        = T*u/m**2
+        x1        = st*x0
+        x2        = ct*x0
+        x3        = 2*T*u/m**3
+        return array([
+            [0, 0, 1, 0,                      0,  0,  0,  0,  0, 0],
+            [0, 0, 0, 1,                      0,  0,  0,  0,  0, 0],
+            [0, 0, 0, 0,                    -x1,  0,  0,  0,  0, 0],
+            [0, 0, 0, 0,                    -x2,  0,  0,  0,  0, 0],
+            [0, 0, 0, 0,                      0,  0,  0,  0,  0, 0],
+            [0, 0, 0, 0,                      0,  0,  0,  0,  0, 0],
+            [0, 0, 0, 0,                      0,  0,  0,  0,  0, 0],
+            [0, 0, 0, 0,                      0, -1,  0,  0,  0, 0],
+            [0, 0, 0, 0,                      0,  0, -1,  0,  0, 0],
+            [0, 0, 0, 0, -ct*lvy*x3 - lvx*st*x3,  0,  0, x1, x2, 0]
+        ], float)
+    def Hamiltonian(self, fullstate):
+        x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
+        T, Isp, g0, g = self.T, self.Isp, self.g0, self.g
+        x0 = T*u/m
+        x1 = 1/(Isp*g0)
+        H  = -T*lvm*u*x1 + lvx*st*x0 + lvy*(ct*x0 - g) + lx*vx + ly*vy
+        H += x1*(T**2*u**2*(-a + 1) + a*(T*u)) # The Lagrangian
+        return H
+    def Pontryagin(self, fullstate):
+        x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
+        lv = sqrt(abs(lvx)**2 + abs(lvy)**2)
+        st = -lvx/lv
+        ct = -lvy/lv
+        u  = -self.Isp*self.g0*lv/m + lm - self.a
+        u /= 2*self.T*(1 - self.a)
+        u  = max(u, 0)
+        u  = min(u, 1)
+        return u, st, ct
+
+
 class Rocket_Lander(Dynamical_Model):
     def __init__(self):
         return None
@@ -410,10 +435,46 @@ class CRTBP(Dynamical_Model):
         x8 = x7*(-mu + 1)
         return -lm*u*x0+lvx*(ax*x1+2*vy+x-x3*x5-x6*x8)+lvy*(ay*x1-2*vx-x5*y-x8*y+y)+lvz*(az*x1+x2*x7*z-x5*z)+lx*vx+ly*vy+lz*vz+x0*(-eps*u*(-u+1)+u)
 
+''' ------
+Propogator
+------ '''
+class Propagate(object):
+    def __init__(self, model):
+        self.model = model
+    def Ballistic_Beta(self, si=None, tf=None, adaptive=True):
+        if si is None: si = self.model.si
+        if tf is None: tf = self.model.tub
+        solver = ode(self.EOM_Ballistic, self.EOM_Ballistic_Jac)
+        solver.set_initial_value(si, 0)
+        solver.set_f_params(zeros(self.model.cdim))
+        if adaptive:
+            solver.set_integrator('dop853', nsteps=1, atol=1e-14, rtol=1e-14, beta=0.1) # RK 8(5,3)
+        else:
+            pass
+        t, state = [], []
+        while self.model.Safe(solver.y) and solver.t < tf:
+            solver.integrate(tf, step=True)
+            t.append(solver.t)
+            state.append(solver.y)
+        return array(t), array(state)
+    def Ballistic(self, si=None, tf=None, nnodes=None):
+        if si is None: si = self.model.si
+        if tf is None: tf = self.model.tub
+        return odeint(
+            self.EOM,
+            si,
+            linspace(0,tf, nnodes),
+            Dfun = self.EOM_Jac,
+            rtol = 1e-12,
+            atol = 1e-12,
+            args = (zeros(self.model.cdim),) # No control
+        )
+    def EOM(self, state, t, control):
+        return self.model.EOM_State(state, control)
+    def EOM_Jac(self, state, t, control):
+        return self.model.EOM_State_Jac(state, control)
+
 if __name__ == "__main__":
-    Apollo = Point_Lander()
-    ms = (Apollo.sub - Apollo.slb)/2 + Apollo.slb
-    y = Apollo.Propagate.Ballistic(tf=100)
-    import matplotlib.pyplot as plt
-    plt.plot(y[:,0], y[:,1])
-    plt.show()
+    mod = Point_Lander()
+    fs = array(list(mod.sub) + [1,1,1,1,1])
+    print mod.Pontryagin(fs)
