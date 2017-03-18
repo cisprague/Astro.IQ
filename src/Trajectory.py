@@ -57,7 +57,6 @@ class Dynamical_Model(object):
             if cond: pass
             else: return False
         return True
-    # For Indirect Methods
     def EOM_Fullstate(self, fullstate, control):
         return None
     def EOM_Fullstate_Jac(self, fullstate, control):
