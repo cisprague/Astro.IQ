@@ -1,5 +1,5 @@
 '''
-Astro.IQ - Optimisation
+Astro.IQ - Trajectory
 Christopher Iliffe Sprague
 christopher.iliffe.sprague@gmail.com
 https://cisprague.github.io/Astro.IQ
@@ -61,7 +61,7 @@ class Dynamical_Model(object):
         return None
     def EOM_Fullstate_Jac(self, fullstate, control):
         return None
-    def Hamiltonian(self, fullstate):
+    def Hamiltonian(self, fullstate, control):
         return None
     def Pontryagin(self, fullstate):
         return None
@@ -82,7 +82,7 @@ class Point_Lander(Dynamical_Model):
         self.g    = float(g)     # Environment's gravity [m/s^2]
         self.T    = float(T)     # Maximum thrust [N]
         self.g0   = float(9.802) # Earth's sea-level gravity [m/s^2]
-        self.a    = float(0)
+        self.a    = float(0.5)
         # For optimisation
         Dynamical_Model.__init__(
             self,
@@ -124,16 +124,16 @@ class Point_Lander(Dynamical_Model):
         x0            = T*u/m
         x1            = T*u/m**2
         return array([
-            [                   vx],
-            [                   vy],
-            [                ux*x0],
-            [            uy*x0 - g],
-            [        -T*u/(Isp*g0)],
-            [                    0],
-            [                    0],
-            [                  -lx],
-            [                  -ly],
-            [uy*lvy*x1 + lvx*ux*x1]
+            vx,
+            vy,
+            ux*x0,
+            uy*x0 - g,
+            -T*u/(Isp*g0),
+            0,
+            0,
+            -lx,
+            -ly,
+            uy*lvy*x1 + lvx*ux*x1
         ], float)
     def EOM_Fullstate_Jac(self, fullstate, control):
         x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
@@ -155,12 +155,13 @@ class Point_Lander(Dynamical_Model):
             [0, 0, 0, 0,                      0,  0, -1,  0,  0, 0],
             [0, 0, 0, 0, -uy*lvy*x3 - lvx*ux*x3,  0,  0, x1, x2, 0]
         ], float)
-    def Hamiltonian(self, fullstate):
+    def Hamiltonian(self, fullstate, control):
         x, y, vx, vy, m, lx, ly, lvx, lvy, lm = fullstate
-        T, Isp, g0, g = self.T, self.Isp, self.g0, self.g
+        u, ux, uy = control
+        T, Isp, g0, g, a = self.T, self.Isp, self.g0, self.g, self.a
         x0 = T*u/m
         x1 = 1/(Isp*g0)
-        H  = -T*lvm*u*x1 + lvx*ux*x0 + lvy*(uy*x0 - g) + lx*vx + ly*vy
+        H  = -T*lm*u*x1 + lvx*ux*x0 + lvy*(uy*x0 - g) + lx*vx + ly*vy
         H += x1*(T**2*u**2*(-a + 1) + a*(T*u)) # The Lagrangian
         return H
     def Pontryagin(self, fullstate):
@@ -168,13 +169,16 @@ class Point_Lander(Dynamical_Model):
         lv = sqrt(abs(lvx)**2 + abs(lvy)**2)
         ux = -lvx/lv
         uy = -lvy/lv
-        u  = -self.Isp*self.g0*lv/m + lm - self.a
-        u /= 2*self.T*(1 - self.a)
-        u  = max(u, 0)
-        u  = min(u, 1)
+        # Switching function
+        S = self.a - lv*self.Isp*self.g0/m - lm
+        if self.a == 1.:
+            if S >= 0.: u = 0.
+            elif S < 0.: u = 1.
+        else:
+            u = -S/(2*self.T*(1-self.a))
+            u = min(u, 1.)
+            u = max(u, 0.)
         return u, ux, uy
-
-
 class Rocket_Lander(Dynamical_Model):
     def __init__(self):
         return None
@@ -440,40 +444,55 @@ Propogator
 class Propagate(object):
     def __init__(self, model):
         self.model = model
-    def Ballistic_Beta(self, si=None, tf=None, adaptive=True):
-        if si is None: si = self.model.si
-        if tf is None: tf = self.model.tub
-        solver = ode(self.EOM_Ballistic, self.EOM_Ballistic_Jac)
-        solver.set_initial_value(si, 0)
-        solver.set_f_params(zeros(self.model.cdim))
-        if adaptive:
-            solver.set_integrator('dop853', nsteps=1, atol=1e-14, rtol=1e-14, beta=0.1) # RK 8(5,3)
-        else:
-            pass
-        t, state = [], []
-        while self.model.Safe(solver.y) and solver.t < tf:
-            solver.integrate(tf, step=True)
-            t.append(solver.t)
-            state.append(solver.y)
-        return array(t), array(state)
     def Ballistic(self, si=None, tf=None, nnodes=None):
         if si is None: si = self.model.si
         if tf is None: tf = self.model.tub
+        if nnodes is None: nnodes = 20
         return odeint(
             self.EOM,
             si,
-            linspace(0,tf, nnodes),
+            linspace(0, tf, nnodes),
             Dfun = self.EOM_Jac,
             rtol = 1e-12,
             atol = 1e-12,
             args = (zeros(self.model.cdim),) # No control
         )
+    def Indirect(self, fsi, tf, nnodes):
+        nsegs = nnodes - 1
+        t    = linspace(0, tf, nnodes)
+        fs   = array(fsi, ndmin=2)
+        c    = array(self.model.Pontryagin(fsi), ndmin=2)
+        # Must integrate incrimentally to track control
+        for k in range(nsegs):
+            fskp1 = odeint(
+                self.EOM_Indirect,
+                fs[k],
+                [t[k], t[k+1]],
+                Dfun = self.EOM_Indirect_Jac,
+                rtol = 1e-13,
+                atol = 1e-13
+            )
+            fskp1 = fskp1[1]
+            fs = vstack((fs, fskp1))
+            c  = vstack((c, self.model.Pontryagin(fskp1)))
+        return t, fs, c
     def EOM(self, state, t, control):
         return self.model.EOM_State(state, control)
     def EOM_Jac(self, state, t, control):
         return self.model.EOM_State_Jac(state, control)
+    def EOM_Indirect(self, fullstate, t):
+        control = self.model.Pontryagin(fullstate)
+        return self.model.EOM_Fullstate(fullstate, control)
+    def EOM_Indirect_Jac(self, fullstate, t):
+        control = self.model.Pontryagin(fullstate)
+        return self.model.EOM_Fullstate_Jac(fullstate, control)
 
 if __name__ == "__main__":
-    mod = Point_Lander()
-    fs = array(list(mod.sub) + [1,1,1,1,1])
-    print mod.Pontryagin(fs)
+    mod  = Point_Lander()
+    fs   = array(list(mod.si) + [-15.,1.,24.,2.,67.])
+    t, fs, c = mod.Propagate.Indirect(fs, 30, 100)
+    import matplotlib.pyplot as plt
+    plt.plot(fs[:,0], fs[:,1], 'k.-')
+    plt.show()
+    plt.plot(c[:,0])
+    plt.show()

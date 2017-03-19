@@ -211,13 +211,44 @@ class Hermite_Simpson(S1C2, base):
 Indirect Method
 ----------- '''
 class Indirect_Shooting(base):
-    def __init__(self, model=Point_Lander()):
-        self.model = model
-        self.dim   = model.sdim     # Just guess costates
-        self.cdim  = model.sdim + 1 # Infinite horizon
-
-
+    def __init__(self, model=Point_Lander(), nnodes=50):
+        self.model  = model
+        self.nnodes = nnodes
+        self.dim    = model.sdim + 1 # Costates and tf
+        self.cdim   = model.sdim + 1 # Infinite horizon
+        base.__init__(self, self.dim, 0, 1, self.cdim, 0, 1e-8)
+        self.set_bounds(
+            [-1e5]*model.sdim + [model.tlb],
+            [ 1e5]*model.sdim + [model.tub]
+        )
+    def _objfun_impl(self, z):
+        return (1.,)
+    def _compute_constraints_impl(self, z):
+        tf       = z[-1]
+        li       = z[:-1]
+        fsi      = hstack((self.model.si, li))
+        t, fs, c = self.model.Propagate.Indirect(fsi, tf, self.nnodes)
+        # The final state, costate, and control
+        fsf = fs[-1]
+        sf  = fsf[0:self.model.sdim]
+        lf  = fsf[self.model.sdim:self.model.sdim*2]
+        cf  = c[-1]
+        # Must land softly on target
+        ceq = list(sf[:-1] - self.model.st[:-1])
+        # Mass is free
+        ceq += [lf[-1]]
+        # Time is free
+        ceq += [self.model.Hamiltonian(fsf, cf)]
+        return ceq
+class Indirect_Multiple_Shooting(base):
+    def __init__(self, model=Point_Lander(), nnodes=50):
+        return None
+    def _objfun_impl(self, z):
+        return None
+    def _compute_constraints_impl(self, z):
+        return None
 
 if __name__ == "__main__":
     mod = Point_Lander()
     prob = Indirect_Shooting(mod)
+    zg = prob.ub
