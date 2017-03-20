@@ -218,8 +218,8 @@ class Indirect_Shooting(base):
         self.cdim   = model.sdim + 1 # Infinite horizon
         base.__init__(self, self.dim, 0, 1, self.cdim, 0, 1e-8)
         self.set_bounds(
-            [-1e5]*model.sdim + [model.tlb],
-            [ 1e5]*model.sdim + [model.tub]
+            [-1e8]*model.sdim + [model.tlb],
+            [ 1e8]*model.sdim + [model.tub]
         )
     def _objfun_impl(self, z):
         return (1.,)
