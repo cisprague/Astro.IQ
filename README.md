@@ -9,13 +9,23 @@ This library aims to implement various *machine learning* and *computational int
 
 ## Applications
 - [X] Planetary Landings
-- [ ] Cislunar Trajectories
+- [X] Cislunar Trajectories
 - [ ] Interplanetary Trajectories
 
-## Trajectory Optimisation Architectures
-- [X] Trapezoidal Transcription
+## Trajectory Transcription Methods
+### Direct
+- [X] Euler
+- [X] Trapezoidal
+- [X] Runge-Kutta
+- [X] Hermite-Simpson
 - [ ] High Fidelity Low-Thrust Direct Transcription <b id="r1">(Yam et al.)</b>
 - [ ] Sims and Flanagan Direct Transcription <b id="r2">(Sims et al.)</b>
+### Indirect
+- [X] Shooting
+- [ ] Multiple Shooting
+
+## Database Generation
+- [X] Homotopic Trajectory Transitioning
 
 ## Machine Learning Architectures
 - [ ] Shallow Feed-Forward Networks
