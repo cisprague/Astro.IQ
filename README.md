@@ -7,6 +7,10 @@ A housefly is a rather simple organism, yet it is able to independently make dec
 ## Goal
 This library aims to implement various *machine learning* and *computational intelligence* techniques in a variety of common *astrodynamics* applications.
 
+## To Do:
+1. Solution fitting
+2. Feed-Forward Neural Network
+
 ## Applications
 - [X] Planetary Landings
 - [X] Cislunar Trajectories
