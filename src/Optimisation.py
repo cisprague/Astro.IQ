@@ -15,6 +15,7 @@ from Trajectory import Point_Lander
 from PyGMO.problem import base
 from PyGMO import *
 import matplotlib.pyplot as plt
+from numba import jit, jitclass
 
 ''' ---------
 Approximation
@@ -78,7 +79,7 @@ class Direct(object):
         self.model  = model          # The dynamical model
         self.Guess  = Guess(self)    # Guessing methods
 class S1C1(Direct):
-    def __init__(self, model, nsegs, ns, nc):
+    def __init__(self, model, nsegs):
         Direct.__init__(self, model, nsegs, 1, 1)
         self.dim  = 1 + (model.sdim + model.cdim)*self.nnodes
         self.consdim = model.sdim*nsegs + 2*model.sdim - 1
@@ -180,8 +181,8 @@ class Euler(S1C1, base):
             ceq += list(s[k+1] - s[k] - h*self.model.EOM_State(s[k], u[k]))
         return ceq
 class Trapezoidal(S1C1, base):
-    def __init__(self, model=Point_Lander(), nsegs=20, ns=1, nc=1):
-        S1C1.__init__(self, model, nsegs, ns, nc)
+    def __init__(self, model=Point_Lander(), nsegs=20):
+        S1C1.__init__(self, model, nsegs)
     def _objfun_impl(self, z):
         tf, s, c = self.Decode(z)
         return (-s[-1, -1],)
@@ -260,7 +261,6 @@ class Hermite_Simpson_Seperated(S2C2, base):
             ceq += list(s[k+1] - s[k] - h/6.*(f2 + 4*fb2 + f1))
         return ceq
 
-
 ''' -----------
 Indirect Method
 ----------- '''
@@ -309,4 +309,7 @@ class Indirect_Multiple_Shooting(base):
 
 if __name__ == "__main__":
     mod  = Point_Lander()
-    prob = Hermite_Simpson_Seperated(mod)
+    prob1 = Trapezoidal(mod)
+    prob2 = Hermite_Simpson_Seperated(mod)
+    tf, s, c =  prob1.Decode(prob1.lb)
+    tf, sb, cb, s, c = prob2.Decode(prob2.lb)
