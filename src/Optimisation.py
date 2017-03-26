@@ -11,11 +11,11 @@ Dependencies
 from numpy import *
 from numpy.linalg import *
 from scipy.interpolate import *
-from Trajectory import Point_Lander
+from Trajectory import *
 from PyGMO.problem import base
 from PyGMO import *
 import matplotlib.pyplot as plt
-from numba import jit, jitclass
+set_printoptions(suppress=True)
 
 ''' ---------
 Approximation
@@ -90,7 +90,7 @@ class S1C1(Direct):
         self.dub  = array(
             [model.tub] + (list(model.sub) + list(model.cub))*self.nnodes
         , float)
-        base.__init__(self, self.dim, 0, self.nobj, self.consdim, 0, 1e-8)
+        base.__init__(self, self.dim, 0, self.nobj, self.consdim, 0, 1e-12)
         self.set_bounds(self.dlb, self.dub)
     def Decode(self, z):
         tf = z[0]
@@ -105,7 +105,7 @@ class S1C1(Direct):
         z = array([tf] + z)
         return z
 class S1C2(Direct):
-    def __init__(self, model=Point_Lander(), nsegs=20):
+    def __init__(self, model, nsegs):
         Direct.__init__(self, model, nsegs, 1, 2)
         self.dim = 1 + model.sdim + model.cdim + (model.cdim*2 + model.sdim)*nsegs
         self.consdim = model.sdim*nsegs + 2*model.sdim - 1
@@ -133,22 +133,38 @@ class S1C2(Direct):
 class S2C2(Direct):
     def __init__(self, model, nsegs):
         Direct.__init__(self, model, nsegs, 2, 2)
-        self.dim = 1 + model.sdim + model.cdim + (model.sdim + model.cdim)*2*nsegs
-        self.cdim = model.sdim*2*nsegs + 2*model.sdim - 1
-        base.__init__(self, self.dim, 0, 1, self.cdim, 0, 1e-8)
-        self.dl = array(
-            [model.tlb] + list(model.slb) + list(model.clb) + (list(model.slb) + list(model.clb))*2*nsegs
-        , float)
-        self.du = array(
-            [model.tub] + list(model.sub) + list(model.cub) + (list(model.sub) + list(model.cub))*2*nsegs
-        , float)
-        self.set_bounds(self.dl, self.du)
+        # Guess tf and mindpoint/node states and controls
+        self.zdim = 1 + model.sdim + model.cdim + (model.sdim + model.cdim)*2*nsegs
+        # Dynamics and boundary conditions, excluding final mass (-1)
+        self.condim = model.sdim*2*nsegs + 2*model.sdim - 1
+        # Initialise PyGMO problem
+        base.__init__(self, self.zdim, 0, 1, self.condim, 0, 1e-12)
+        # Initialise decision bound vectors
+        self.zlb, self.zub = empty(self.zdim), empty(self.zdim)
+        i, j = 0, 1
+        self.zlb[i:j], self.zub[i:j] = model.tlb, model.tub
+        i, j = j, j + model.sdim
+        self.zlb[i:j], self.zub[i:j] = model.slb, model.sub
+        i, j = j, j + model.cdim
+        self.zlb[i:j], self.zub[i:j] = model.clb, model.cub
+        for i in range(nsegs):
+            i, j = j, j + model.sdim
+            self.zlb[i:j], self.zub[i:j] = model.slb, model.sub
+            i, j = j, j + model.cdim
+            self.zlb[i:j], self.zub[i:j] = model.clb, model.cub
+            i, j = j, j + model.sdim
+            self.zlb[i:j], self.zub[i:j] = model.slb, model.sub
+            i, j = j, j + model.cdim
+            self.zlb[i:j], self.zub[i:j] = model.clb, model.cub
+        self.set_bounds(self.zlb, self.zub)
     def Decode(self, z):
-        tf = z[0]
-        z  = array(z[1:])
-        b1 = zeros(self.model.sdim + self.model.cdim)
-        z  = hstack((b1, z))
-        z  = z.reshape((self.nnodes, (self.model.sdim + self.model.cdim)*2))
+        tf   = z[0]
+        # Decision vector without tf
+        z    = array(z[1:])
+        # Add dumby sbar and ubar for consistent indexing
+        b    = zeros(self.model.sdim + self.model.cdim)
+        z    = hstack((b, z))
+        z    = z.reshape((self.nnodes, (self.model.sdim + self.model.cdim)*2))
         i, j = 0, self.model.sdim
         sb   = z[:,i:j]
         i, j = j, j + self.model.cdim
@@ -161,8 +177,10 @@ class S2C2(Direct):
     def Code(self, tf, sb, cb, s, c):
         z = hstack((sb, cb, s, c))
         z = z.flatten()
+        # Remove the dumby state and control
         z = z[self.model.sdim + self.model.cdim:]
-        z = hstack(([tf, z]))
+        # Insert the final time
+        z = hstack((tf, z))
         return z
 class Euler(S1C1, base):
     def __init__(self, model=Point_Lander(), nsegs=20, ns=1, nc=1):
@@ -220,7 +238,7 @@ class Runge_Kutta(S1C2, base):
         return ceq
 class Hermite_Simpson_Compressed(S1C2, base):
     def __init__(self, model=Point_Lander(), nsegs=20):
-        S1C2.__init__(self, model, nsegs, 1, 2)
+        S1C2.__init__(self, model, nsegs)
     def _objfun_impl(self, z):
         tf, cb, s, c = self.Decode(z)
         return (-s[-1,-1],)
@@ -238,7 +256,7 @@ class Hermite_Simpson_Compressed(S1C2, base):
             fb2  = self.Model.EOM_State(sb2, cb[k+1])
             ceq += list(s[k+1] - s[k] -h/6.*(f1 + 4*fb2 + f2))
         return ceq
-class Hermite_Simpson_Seperated(S2C2, base):
+class HSS(S2C2, base):
     def __init__(self, model=Point_Lander(), nsegs=20):
         S2C2.__init__(self, model, nsegs)
     def _objfun_impl(self, z):
@@ -246,19 +264,21 @@ class Hermite_Simpson_Seperated(S2C2, base):
         return (-s[-1,-1],)
     def _compute_constraints_impl(self, z):
         tf, sb, cb, s, c = self.Decode(z)
-        h   = tf/self.nnodes
-        tau = h/tf
-        # Boundary
-        ceq  = list(s[0] - self.model.si)
-        ceq += list(s[-1,:-1] - self.model.st[:-1])
+        h        = tf/self.nnodes
+        ceq      = zeros(self.condim, float)
+        i, j     = 0, self.model.sdim
+        ceq[i:j] = s[0] - self.model.si
+        i, j     = j, j + self.model.sdim - 1
+        ceq[i:j] = s[-1,:-1] - self.model.st[:-1]
         # Dynamics
         for k in range(self.nsegs):
-            f1   = self.model.EOM_State(s[k], c[k])
-            f2   = self.model.EOM_State(s[k+1], c[k+1])
-            sb2  = 0.5*(s[k] + s[k+1]) + h/8.*(f1 + f2)
-            fb2  = self.model.EOM_State(sb[k+1], cb[k+1])
-            ceq += list(sb[k+1] - 0.5*(s[k+1] + s[k]) - h/8.*(f1-f2))
-            ceq += list(s[k+1] - s[k] - h/6.*(f2 + 4*fb2 + f1))
+            f1       = self.model.EOM_State(s[k], c[k])
+            f2       = self.model.EOM_State(s[k+1], c[k+1] )
+            fb2      = self.model.EOM_State(sb[k+1], cb[k+1])
+            i, j     = j, j + self.model.sdim
+            ceq[i:j] = sb[k+1] - 0.5*(s[k+1] + s[k]) - h/8.*(f1-f2)
+            i, j     = j, j + self.model.sdim
+            ceq[i:j] = s[k+1] - s[k] - h/6.*(f2 + 4*fb2 + f1)
         return ceq
 
 ''' -----------
@@ -272,8 +292,8 @@ class Indirect_Shooting(base):
         self.cdim   = model.sdim + 1 # Infinite horizon
         base.__init__(self, self.dim, 0, 1, self.cdim, 0, 1e-8)
         self.set_bounds(
-            [-1e8]*model.sdim + [model.tlb],
-            [ 1e8]*model.sdim + [model.tub]
+            [-1e14]*model.sdim + [model.tlb],
+            [ 1e14]*model.sdim + [model.tub]
         )
     def _objfun_impl(self, z):
         return (1.,)
@@ -308,8 +328,7 @@ class Indirect_Multiple_Shooting(base):
         return None
 
 if __name__ == "__main__":
-    mod  = Point_Lander()
-    prob1 = Trapezoidal(mod)
-    prob2 = Hermite_Simpson_Seperated(mod)
-    tf, s, c =  prob1.Decode(prob1.lb)
-    tf, sb, cb, s, c = prob2.Decode(prob2.lb)
+    mod  = Point_Lander_Drag()
+    prob = HSS(mod, nsegs=3)
+    zg   = prob.ub
+    prob._compute_constraints_impl(zg)
