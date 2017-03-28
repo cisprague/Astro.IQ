@@ -208,7 +208,7 @@ class Point_Lander_Drag(Dynamical_Model):
             [1, pi], # we restrict the thrust to only point upward
             1,
             1000,
-            [-5000, 1000, -300, -300, 6585],
+            [-500, 1000, -300, -300, 6585],
             [500, 5000, 300, 0, 8165])
     def EOM_State(self, state, control):
         x, y, vx, vy, m = state

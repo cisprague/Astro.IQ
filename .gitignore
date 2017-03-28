@@ -5,3 +5,4 @@ __pycache__/
 .ipynb_checkpoints
 *.pyc
 *.2
+src/Data/

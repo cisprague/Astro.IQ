@@ -138,7 +138,7 @@ class S2C2(Direct):
         # Dynamics and boundary conditions, excluding final mass (-1)
         self.condim = model.sdim*2*nsegs + 2*model.sdim - 1
         # Initialise PyGMO problem
-        base.__init__(self, self.zdim, 0, 1, self.condim, 0, 1e-12)
+        base.__init__(self, self.zdim, 0, 1, self.condim, 0, 1e-8)
         # Initialise decision bound vectors
         self.zlb, self.zub = empty(self.zdim), empty(self.zdim)
         i, j = 0, 1

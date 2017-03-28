@@ -1,45 +1,5 @@
-'''
-Astro.IQ - Data
-Christopher Iliffe Sprague
-christopher.iliffe.sprague@gmail.com
-https://cisprague.github.io/Astro.IQ
-'''
-
-from numpy import *
-set_printoptions(suppress=True)
-
-def Random_Initial_State(model):
-    # Returns random initial state within bounds
-    sirange = (model.siub - model.silb)
-    sistep  = random.random(model.sdim)*sirange
-    return model.silb + sistep
-def Random_Initial_States(model, mxstep=10., nstates=5000.):
-    # NOTE: Need to make a better way to generate random walks within bounds!
-    # model: Dynamical model
-    # step: Max percentage step of each state boundary size
-    # nstates: Number of initial states to generate
-    # The model's initial state boundaries
-    silb    = model.silb
-    siub    = model.siub
-    # The size of the boundary space
-    sispace = siub - silb
-    # Convert the percent input to number
-    mxstep  = mxstep*1e-2*sispace
-    # Make array
-    states = zeros((nstates, model.sdim))
-    # First state in between everything
-    states[0] = silb + 0.5*sispace
-    for i in arange(1, nstates):
-        perturb   = random.randn(model.sdim)*mxstep
-        # Reverse and decrease the steps of violating elements
-        states[i] = states[i-1] + perturb
-        badj = states[i] < silb
-        states[i, badj] = states[i-1, badj] - 0.005*perturb[badj]
-        badj = states[i] > siub
-        states[i, badj] = states[i-1, badj] - 0.005*perturb[badj]
-    return states
-
 if __name__ == "__main__":
+
     ''' -------------------------------------------------
     Problem       : SpaceX Dragon 2 Martian Soft Landing
     Dynamics      : 2-Dimensional Variable Mass Point
@@ -63,7 +23,7 @@ if __name__ == "__main__":
 
     # Load initial guess
     print("Loading initial guess..")
-    z = load('Data/HSS_20_Walk_Base.npy')
+    z = load('Data/HSS_10_Mars_Base.npy')
 
     # Allott space for solutions
     n_traj = len(si_list)
@@ -77,7 +37,7 @@ if __name__ == "__main__":
         # Initialise the model at that state
         model   = Point_Lander_Drag(si)
         # Initialise the HSS problem
-        prob    = HSS(model, nsegs=20)
+        prob    = HSS(model, nsegs=10)
         # Create empty population
         pop     = population(prob)
         # Guess the previous solution
@@ -88,6 +48,6 @@ if __name__ == "__main__":
         # Store the new solution
         z       = pop.champion.x
         # Save the solution
-        save("Data/Mars/HSS_20_" + str(i), z)
+        save("Data/Mars/HSS_10A_" + str(i), z)
         # Update the solution array
         sols[i] = z
