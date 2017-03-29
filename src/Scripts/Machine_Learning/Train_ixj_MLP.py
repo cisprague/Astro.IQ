@@ -11,17 +11,18 @@ network architectures in parallel.
 >> python Train_ixj_MLP.py
 ----------------------------------------- '''
 
-def main(width, nlayers):
+def main(width, nlayers, case):
     # Load the data to be regressed
-    data = np.load('../../Data/ML/Mars_Far.npy')
+    path     = '../../Data/ML/'
+    pathdata = path + str(case)
+    data = np.load(pathdata + '.npy')
     # Designate the input and output indicies
-    iin  = [0,1,2,3,4]
-    iout = [5,6]
+    iin      = [0,1,2,3,4]
+    iout     = [5,6]
     # Define the structure of the hidden layers
-    layers = [width]*nlayers
+    layers   = [width]*nlayers
     # Save the neural net here
-    path = '../../Data/ML/Nets/Mars_Far_'
-    path += str(width) + 'x' + str(nlayers)
+    path    += 'Nets/' + str(case) + '_'+ str(width) + 'x' + str(nlayers)
     # Instantiate the neural network
     net = MLP(path)
     # Build the neural network
@@ -39,8 +40,10 @@ def main(width, nlayers):
     np.save(path + '_ypdat', net.ypdat)
 
 if __name__ == "__main__":
-    nlayers = [1, 2, 3, 4, 5]
+    nlayers = [1, 2, 3]
     width   = [10, 20]
-    for shape in itertools.product(width, nlayers):
-        p = multiprocessing.Process(target=main, args=shape)
+    cases   = ['Mars_Far', 'Mars_Close', 'Mars_Combined']
+
+    for args in itertools.product(width, nlayers, cases):
+        p = multiprocessing.Process(target=main, args=args)
         p.start()

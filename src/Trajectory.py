@@ -12,6 +12,7 @@ from numpy import *
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 set_printoptions(suppress=True)
+from ML import MLP
 
 ''' -----------
 Dynamical Model
@@ -259,14 +260,20 @@ class Point_Lander_Drag(Dynamical_Model):
         plt.tight_layout()
         plt.show()
 
-
-
 ''' ------
 Propogator
 ------ '''
 class Propagate(object):
     def __init__(self, model):
         self.model = model
+    def Controlled(self, si, tf, nnodes):
+        return odeint(
+            self.EOM_Controlled,
+            si,
+            linspace(0, tf, nnodes),
+            rtol = 1e-12,
+            atol = 1e-12
+        )
     def Ballistic(self, si=None, tf=None, nnodes=None):
         if si is None: si = self.model.si
         if tf is None: tf = self.model.tub
@@ -298,7 +305,7 @@ class Propagate(object):
             fs = vstack((fs, fskp1))
             c  = vstack((c, self.model.Pontryagin(fskp1)))
         return t, fs, c
-    def EOM(self, state, t, control):
+    def EOM(self, state, t, control=None):
         return self.model.EOM_State(state, control)
     def EOM_Jac(self, state, t, control):
         return self.model.EOM_State_Jac(state, control)
@@ -308,7 +315,13 @@ class Propagate(object):
     def EOM_Indirect_Jac(self, fullstate, t):
         control = self.model.Pontryagin(fullstate)
         return self.model.EOM_Fullstate_Jac(fullstate, control)
+''' -------
+Controllers
+------- '''
+class Neural(object):
+    def __init__(self, data, model):
+        pass
+
 
 if __name__ == "__main__":
     model  = Point_Lander_Drag()
-    print model.c1
