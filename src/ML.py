@@ -3,95 +3,97 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
-
+import dill
 
 class MLP(object):
-    def __init__(self, name, path):
-        # _dat: Numeric data
-        # _: TensorFlow representation
-        self.name  = str(name)
-        self.path  = str(path) + name + '.mlp'
-        self.session = tf.Session()
+    def __init__(self, path):
+        self.path    = str(path) + '.mlp'
     def build(self, data, iin, iout, layers):
-        # Format for input x and output y
-        ndat     = data.shape[0] # Number of data points
-        xdat     = data[:, iin]  # The input data
-        ydat     = data[:, iout] # The desired output data
-        nfeatin  = xdat.shape[1] # Number of input features
-        nfeatout = ydat.shape[1] # The number of output features
+        # Retreive the data
+        self.ndat = data.shape[0] # Number of samples
+        self.xdat = data[:,iin]   # Input data
+        self.ydat = data[:,iout]  # Output (target) data
+        # and scale it
+        self.scaler = StandardScaler()
+        self.scaler.fit(self.xdat)
+        self.xdatsc = self.scaler.transform(self.xdat)
+        self.nin = len(iin)
+        self.nout = len(iout)
         # TensorFlow variables to feed input x and desired output y
-        x = tf.placeholder("float", [None, nfeatin])
-        y = tf.placeholder("float", [None, nfeatout])
+        x = tf.placeholder("float", [None, self.nin], name='Input')
+        y = tf.placeholder("float", [None, self.nout], name='Output')
         # Insert number of input and output features
-        layers  = np.hstack((nfeatin, layers, nfeatout))
+        layers  = np.hstack((self.nin, layers, self.nout))
         # Specifications for assembling the MLP
         nlayers = len(layers) # Number of layers
         iin     = 1           # Index of input layer
         iout    = nlayers - 1 # Index of output layer
+        # Assemble the hidden layers
         for i in range(nlayers)[1:]:
             nin  = layers[i-1]
             nout = layers[i]
-            w    = tf.Variable(tf.random_normal([nin, nout]))
-            b    = tf.Variable(tf.random_normal([nout]))
+            w    = tf.Variable(tf.random_normal([nin, nout]), name='w'+str(i))
+            b    = tf.Variable(tf.random_normal([nout]), name='b'+str(i))
             # Apply weights
             if i == iin:
-                yp = tf.add(tf.matmul(x, w), b)
+                yp = tf.add(tf.matmul(x, w), b, name='yp'+str(i))
             else:
-                yp = tf.add(tf.matmul(yp, w), b)
+                yp = tf.add(tf.matmul(yp, w), b, name='yp'+str(i))
             # Apply activation
             if i == iout:
                 pass
             else:
-                yp = tf.nn.relu(yp)
+                yp = tf.nn.relu(yp, name='yp'+str(i))
         # Store the info!
-        self.layers   = layers                # Hidden layer dimensions
-        self.xdat     = xdat                  # Input data
-        self.ydat     = ydat                  # Output data (targets)
-        self.x        = x                     # TF for input data
-        self.y        = y                     # TF for output data (targets)
-        self.yp       = yp                    # TF for output prediction
-        self.w        = w
-        self.b        = b
-        self.nfeatin  = nfeatin
-        self.nfeatout = nfeatout
-        self.saver    = tf.train.Saver()
-        self.scaler   = StandardScaler()
-        self.scaler.fit(self.xdat)
+        self.layers = layers # Dimensions
+        self.x      = x      # TF input data
+        self.y      = y      # TF output data (targets)
+        self.yp     = yp     # TF output prediction
+        self.w      = w      # TF weights
+        self.b      = b      # TF biases
     def train(self, learnrate, trainiter, dispr):
-        # Retreive the MLP properties
-        xdat = self.xdat
-        ydat = self.ydat
-        x    = self.x
-        y    = self.y
-        yp   = self.yp
-        # Scale data
-        xdat = self.scaler.transform(xdat)
+        self.learnrate = learnrate
+        # Feed TensorFlow
+        self.feed_dict = {self.x: self.xdatsc, self.y: self.ydat}
         # Minimise this cost
-        cost = tf.reduce_mean(tf.square(y-yp))
+        self.cost  = tf.reduce_mean(tf.square(self.y-self.yp))
         # with this optimiser
-        opt  = tf.train.AdamOptimizer(learnrate).minimize(cost)
-        # Things to keep track of
-        costs   = np.empty(trainiter)
-        meancosts = np.empty(trainiter)
-        # Initialise variables
-        self.session.run(tf.global_variables_initializer())
-        # Training
-        for i in range(trainiter):
-            _, c = self.session.run([opt, cost], feed_dict={x: xdat, y: ydat})
-            if i%dispr == 0:
-                print("Cost " + str(i) + ": " + str(c))
-            costs[i] = c
-        # Store the results
-        self.ypdat     = self.session.run(yp, feed_dict={x: xdat})
-        self.costs     = costs
+        self.opt   = tf.train.AdamOptimizer(self.learnrate).minimize(self.cost)
+        # and keep track of its progress
+        self.costs = np.empty(trainiter)
+        saver = tf.train.Saver()
+        # Training time!
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            for i in range(trainiter):
+                _, c = sess.run([self.opt, self.cost], self.feed_dict)
+                if i%dispr == 0:
+                    print("Cost " + str(i) + ": " + str(c))
+                self.costs[i] = c
+
+            # Store the results
+            self.ypdat     = sess.run(self.yp, self.feed_dict)
+            save_path = saver.save(sess, self.path)
+            print('Model saved to ' + str(save_path))
     def predict(self, xdat):
-        # Ensure the correct dimension
-        xdat = np.asarray(xdat).reshape(-1, self.nfeatin)
-        # Scale as we did in training
-        xdat = self.scaler.transform(xdat)
-        # Predict
-        ypdat = self.session.run(self.yp, feed_dict={self.x: xdat})
-        return ypdat
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+            try:
+                saver.restore(sess, self.path)
+            except:
+                raise IOError('Must build and train the model before evaluating.')
+            # Ensure the correct dimension
+
+            xdat = np.asarray(xdat).reshape(-1, self.nin)
+            # Scale as we did in training
+            xdat = self.scaler.transform(xdat)
+            # Predict
+            ypdat = sess.run(self.yp, feed_dict={self.x: xdat})
+            # reformat if vector
+            if ypdat.shape[0] == 1:
+                return ypdat[0]
+            else:
+                return ypdat
     def plot(self):
         ypdat = self.ypdat
         costs = self.costs
@@ -111,11 +113,6 @@ class MLP(object):
         plt.show()
         plt.plot(self.costs, 'k--')
         plt.show()
-    def save(self):
-        return self.saver.save(self.session, self.path)
-    def load(self, path):
-        self.saver.restore(self.session, path)
-
 
 def main():
 
@@ -130,12 +127,16 @@ def main():
     dp2 = data[34:37, iin]
 
     # MLP
-    mlppath = path + "Data/ML/"
-    net = MLP("Mars_Far", mlppath)
-    net.build(data, iin, iout, hshape)
-    net.load(net.path)
-    #net.train(1e-2, 100)
-    #net.save()
+    mlppath = path + "Data/ML/Nets/"
+    net1 = MLP(mlppath + "Mars_Far")
+    net1.build(data, iin, iout, hshape)
+    net1.train(1e-2, 20, 1)
+    #print net1.predict(dp1)
+    #net1.train(1e-2, 20, 1)
+    #net1.save()
+    #net1.save()
+
 
 if __name__ == "__main__":
     main()
+    pass
