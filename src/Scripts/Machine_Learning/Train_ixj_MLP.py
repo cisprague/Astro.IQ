@@ -4,6 +4,8 @@ import numpy as np
 from ML import MLP
 import multiprocessing
 import itertools
+from numba import jit
+import cProfile
 
 ''' -----------------------------------------
 Here we train various different neural
@@ -11,6 +13,7 @@ network architectures in parallel.
 >> python Train_ixj_MLP.py
 ----------------------------------------- '''
 
+@jit(nogil=True, cache=True)
 def main(width, nlayers, case):
     # Load the data to be regressed
     path     = '../../Data/ML/'
@@ -28,7 +31,7 @@ def main(width, nlayers, case):
     # Build the neural network
     net.build(data, iin, iout, layers)
     # Specify the learning rate
-    lr = 1e-4
+    lr = 1e-2
     # Number of training iterations
     tit = 200000
     # How often to display cost
@@ -42,8 +45,4 @@ def main(width, nlayers, case):
 if __name__ == "__main__":
     nlayers = [1, 2, 3]
     width   = [10, 20]
-    cases   = ['Mars_Far', 'Mars_Close', 'Mars_Combined']
-
-    for args in itertools.product(width, nlayers, cases):
-        p = multiprocessing.Process(target=main, args=args)
-        p.start()
+    main(20,5,'Mars_Combined')

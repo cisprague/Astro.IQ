@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
-import dill
+import cProfile
 
 class MLP(object):
     def __init__(self, path):
@@ -75,25 +75,21 @@ class MLP(object):
             self.ypdat     = sess.run(self.yp, self.feed_dict)
             save_path = saver.save(sess, self.path)
             print('Model saved to ' + str(save_path))
-    def predict(self, xdat):
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            try:
-                saver.restore(sess, self.path)
-            except:
-                raise IOError('Must build and train the model before evaluating.')
-            # Ensure the correct dimension
-
-            xdat = np.asarray(xdat).reshape(-1, self.nin)
-            # Scale as we did in training
-            xdat = self.scaler.transform(xdat)
-            # Predict
-            ypdat = sess.run(self.yp, feed_dict={self.x: xdat})
-            # reformat if vector
-            if ypdat.shape[0] == 1:
-                return ypdat[0]
-            else:
-                return ypdat
+    def predict(self, xdat, sess, restore=True):
+        if restore:
+            saver = tf.train.Saver()
+            saver.restore(sess, self.path)
+        # Ensure the correct dimension
+        xdat = np.asarray(xdat).reshape(-1, self.nin)
+        # Scale as we did in training
+        xdat = self.scaler.transform(xdat)
+        # Predict
+        ypdat = sess.run(self.yp, feed_dict={self.x: xdat})
+        # reformat if vector
+        if ypdat.shape[0] == 1:
+            return ypdat[0]
+        else:
+            return ypdat
     def plot(self):
         ypdat = self.ypdat
         costs = self.costs
