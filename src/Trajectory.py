@@ -74,7 +74,6 @@ class Dynamical_Model(object):
         else:
             return True
 
-
 ''' ---
 Landers
 --- '''
@@ -221,8 +220,8 @@ class Point_Lander_Drag(Dynamical_Model):
             [1, pi], # and restricted to only point upward
             1,
             1000,
-            [-200, 2500, -100, -200, 7000],
-            [200, 3500, 100, -100, 8000])
+            [-200, 2500, -100, -100, 7000],
+            [200, 3500, 100, -20, 8000])
     def EOM_State(self, state, control):
         x, y, vx, vy, m = state
         u, theta        = control
@@ -287,7 +286,7 @@ class Propagate(object):
         control[0,:] = self.model.controller(state[0], bangbang, sess, True)
         for i in range(nnodes)[1:]:
             s1 = state[i-1]
-            if s1[1] <= 0:
+            if s1[1] <= 1.:
                 break
             else:
                 dt = t[[i-1, i]]

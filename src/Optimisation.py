@@ -292,8 +292,8 @@ class Indirect_Shooting(base):
         self.cdim   = model.sdim + 1 # Infinite horizon
         base.__init__(self, self.dim, 0, 1, self.cdim, 0, 1e-8)
         self.set_bounds(
-            [-1e14]*model.sdim + [model.tlb],
-            [ 1e14]*model.sdim + [model.tub]
+            [-1e10]*model.sdim + [model.tlb],
+            [ 1e10]*model.sdim + [model.tub]
         )
     def _objfun_impl(self, z):
         return (1.,)
@@ -328,7 +328,5 @@ class Indirect_Multiple_Shooting(base):
         return None
 
 if __name__ == "__main__":
-    mod  = Point_Lander_Drag()
-    prob = HSS(mod, nsegs=3)
-    zg   = prob.ub
-    prob._compute_constraints_impl(zg)
+    mod  = Point_Lander()
+    prob = Indirect_Shooting(mod)
