@@ -6,19 +6,25 @@ import seaborn as sns
 import cProfile
 
 class MLP(object):
+
     def __init__(self, path):
         self.path    = str(path) + '.mlp'
-    def build(self, data, iin, iout, layers):
+
+    def build(self, data, iin, iout, layers, perc):
         # Retreive the data
-        self.ndat = data.shape[0] # Number of samples
-        self.xdat = data[:,iin]   # Input data
-        self.ydat = data[:,iout]  # Output (target) data
+        self.ndat  = data.shape[0]           # Number of samples
+	self.ndatt = int(perc*self.ndat)     # Number of training samples
+        self.xdat  = data[:self.ndatt,iin]   # Input data
+        self.ydat  = data[:self.ndatt,iout]  # Output (target) data
+	self.xdatt = data[self.ndatt:,iin]   # Test data
+	self.ydatt = data[self.ndatt:,iout]  # Test data
         # and scale it
-        self.scaler = StandardScaler()
+        self.scaler  = StandardScaler()
         self.scaler.fit(self.xdat)
-        self.xdatsc = self.scaler.transform(self.xdat)
-        self.nin = len(iin)
-        self.nout = len(iout)
+        self.xdatsc  = self.scaler.transform(self.xdat)
+	self.xdattsc = self.scaler.transform(self.xdatt)
+        self.nin     = len(iin)
+        self.nout    = len(iout)
         # TensorFlow variables to feed input x and desired output y
         x = tf.placeholder("float", [None, self.nin], name='Input')
         y = tf.placeholder("float", [None, self.nout], name='Output')
@@ -51,30 +57,38 @@ class MLP(object):
         self.yp     = yp     # TF output prediction
         self.w      = w      # TF weights
         self.b      = b      # TF biases
+
     def train(self, learnrate, trainiter, dispr):
         self.learnrate = learnrate
         # Feed TensorFlow
-        self.feed_dict = {self.x: self.xdatsc, self.y: self.ydat}
+        self.feed_dict      = {self.x: self.xdatsc, self.y: self.ydat}
+	self.feed_dict_test = {self.x: self.xdattsc, self.y: self.ydatt}
         # Minimise this cost
         self.cost  = tf.reduce_mean(tf.square(self.y-self.yp))
         # with this optimiser
         self.opt   = tf.train.AdamOptimizer(self.learnrate).minimize(self.cost)
         # and keep track of its progress
-        self.costs = np.empty(trainiter)
+        self.costs = []
+	self.testcosts = []
         saver = tf.train.Saver()
         # Training time!
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for i in range(trainiter):
-                _, c = sess.run([self.opt, self.cost], self.feed_dict)
+                _, c, self.ypdat = sess.run([self.opt, self.cost, self.yp], self.feed_dict)
+		ct       = sess.run(self.cost, self.feed_dict_test)
                 if i%dispr == 0:
-                    print("Cost " + str(i) + ": " + str(c))
-                self.costs[i] = c
-
+                    print("Training Cost " + str(i) + ": " + str(c))
+		    print("Test Cost" + str(i) + ":" + str(c))
+                self.costs.append(c)
+		self.testcosts.append(ct)
+		save_path = saver.save(sess, self.path)
+		np.save(self.path + '_ypdat', self.ypdat)
+		np.save(self.path + '_costs', self.costs)
+		np.save(self.path + '_test_costs', self.testcosts)
             # Store the results
-            self.ypdat     = sess.run(self.yp, self.feed_dict)
-            save_path = saver.save(sess, self.path)
-            print('Model saved to ' + str(save_path))
+            #self.ypdat     = sess.run(self.yp, self.feed_dict)
+
     def predict(self, xdat, sess, restore=True):
         if restore:
             saver = tf.train.Saver()
@@ -90,6 +104,7 @@ class MLP(object):
             return ypdat[0]
         else:
             return ypdat
+
     def plot(self):
         ypdat = self.ypdat
         costs = self.costs

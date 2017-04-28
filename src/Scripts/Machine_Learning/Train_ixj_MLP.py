@@ -17,32 +17,31 @@ network architectures in parallel.
 def main(width, nlayers):
     # Load the data to be regressed
     path     = '../../Data/Mars/'
-    data = np.load(path + 'HSS_10_Alpha_dps.npy')
+    data = np.load(path + 'HSS_10_Train.npy')
     # Designate the input and output indicies
     iin      = [0,1,2,3,4]
     iout     = [5,6]
     # Define the structure of the hidden layers
     layers   = [width]*nlayers
     # Save the neural net here
-    path    += 'Nets/' + str('Mars_Regular') + '_'+ str(width) + 'x' + str(nlayers)
+    path    += 'Nets/' + str('Mars_Reg_New') + '_'+ str(width) + 'x' + str(nlayers)
     # Instantiate the neural network
     net = MLP(path)
     # Build the neural network
-    net.build(data, iin, iout, layers)
+    net.build(data, iin, iout, layers, 0.8)
     # Specify the learning rate
-    lr = 1e-2
+    lr = 1e-4
     # Number of training iterations
-    tit = 50000
+    tit = 200000
     # How often to display cost
     dispr = 50
     # Train the network
     print('Beginning training for ' + path)
     net.train(lr, tit, dispr)
     print('Training finished for ' + path)
-    np.save(path + '_ypdat', net.ypdat)
-    np.save(path + '_costs', net.costs
+
 
 if __name__ == "__main__":
     nlayers = [2, 3]
     width   = [20, 50]
-    main(20, 4)
+    main(50, 4)

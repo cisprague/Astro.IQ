@@ -366,7 +366,7 @@ class Neural(object):
         net      += str(dim[0]) + 'x' + str(dim[1])
         self.net  = MLP(net)
         layers    = [dim[0]]*dim[1]
-        self.net.build(data, iin, iout, layers)
+        self.net.build(data, iin, iout, layers,0.90)
     def Control(self, state, bangbang, sess, restore):
         control = self.net.predict(state, sess, restore)
         # Squash the control to model limiations
