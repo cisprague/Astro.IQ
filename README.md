@@ -1,5 +1,6 @@
 # Astro.IQ
 Machine Learning<sup id="a1">(1)</sup> + Spacecraft Trajectory Optimisation<sup id="a2">(2)</sup>
+
 [Slides](http://slides.com/christopheriliffesprague/intelligent-trajectory-optimization-4/fullscreen)
 
 ## Inspiration
