@@ -43,8 +43,8 @@
 
 &lt;p&gt;The random walks of initial states, within the position and velocity boundaries of a lander, are shown below.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Mars_Init_States_r.svg&quot; alt=&quot;Initial States Position&quot; /&gt;
-&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Mars_Init_States_v.svg&quot; alt=&quot;Initial States Velocities&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Mars_Init_States_r.png&quot; alt=&quot;Initial States Position&quot; /&gt;
+&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Mars_Init_States_v.png&quot; alt=&quot;Initial States Velocities&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;From the generated sequence of initial states, generated in order of similarity through the random walk within bounds, the methods of trajectory optimisation may be employed from each initial state. The optimisation process quickly converges from each subsequent initial state due to their similarities as explained by homotopy. Through this process, a very large database of optimal trajectories can be generated from various initial states.&lt;/p&gt;
 
@@ -127,8 +127,8 @@ Layer 3 has 5  nodes.
 
 &lt;p&gt;at a nominal learning rate of &lt;script type=&quot;math/tex&quot;&gt;\alpha=1\times10^{-2}&lt;/script&gt; and &lt;script type=&quot;math/tex&quot;&gt;\alpha=1\times10^{-4}&lt;/script&gt;.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Training_Loss_2.svg&quot; alt=&quot;20x2 Training&quot; /&gt;
-&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Training_Loss_4.svg&quot; alt=&quot;20x4 Training&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Training_Loss_2.png&quot; alt=&quot;20x2 Training&quot; /&gt;
+&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/Training_Loss_4.png&quot; alt=&quot;20x4 Training&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Indeed, it is seen that if the learning rate is set too greedily, the training convergence of the cost minimisation becomes rather noisy, hence improvement is seen with a more conservative learning rate. Despite this distinction, although a lower learning rate further encourages convergence to the true optimal network parameters, it does however result in a longer training duration, making it infeasible for many domestic computing apparatuses.&lt;/p&gt;
 
@@ -200,10 +200,10 @@ Layer 3 has 5  nodes.
 
 &lt;p&gt;In verifying the success of each neural network to optimally control the trajectory of a dynamical system, random initial states are typically selected within the 5% dilated box-bounded region in which the training initial states were generated from. From the randomly selected initial states the dynamics of the system are then propagated with the control mapping enforced by the implemented neural network. Ten neuro-controlled trajectories are shown for the &lt;script type=&quot;math/tex&quot;&gt;20\times2&lt;/script&gt; and &lt;script type=&quot;math/tex&quot;&gt;20\times4&lt;/script&gt; neural networks in regard to position and thrust throttle profile.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x2_Traj.svg&quot; alt=&quot;20x2 Neuro-Controlled Trajectory&quot; /&gt;
-&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x2_Throttle.svg&quot; alt=&quot;20x2 Neuro-Controlled Throttle&quot; /&gt;
-&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x4_Traj.svg&quot; alt=&quot;20x4 Neuro-Controlled Trajectory&quot; /&gt;
-&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x4_Throttle.svg&quot; alt=&quot;20x4 Neuro-Controlled Throttle&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x2_Traj.png&quot; alt=&quot;20x2 Neuro-Controlled Trajectory&quot; /&gt;
+&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x2_Throttle.png&quot; alt=&quot;20x2 Neuro-Controlled Throttle&quot; /&gt;
+&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x4_Traj.png&quot; alt=&quot;20x4 Neuro-Controlled Trajectory&quot; /&gt;
+&lt;img src=&quot;/Astro.IQ/assets/Neuro_Control/20x4_Throttle.png&quot; alt=&quot;20x4 Neuro-Controlled Throttle&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Indeed, it is quite easily seen that the $20\times4$ network is superior to the &lt;script type=&quot;math/tex&quot;&gt;20\times2&lt;/script&gt; network in performance. Not only is this evidenced by the network’s regression of the training database, but more importantly by its performance with respect to its dynamic implementation as a real-time controller. The difference between the control profile generated from the &lt;script type=&quot;math/tex&quot;&gt;20\times2&lt;/script&gt; network and the &lt;script type=&quot;math/tex&quot;&gt;20\times4&lt;/script&gt; network is revealing; the &lt;script type=&quot;math/tex&quot;&gt;20\times4&lt;/script&gt; network is more accurately able to replicate the &lt;em&gt;bang-bang&lt;/em&gt; optimal control profile that was to be expected in accordance to optimal control theory. This is unsurprising as it is widely indicated in the field of machine learning that the addition of extra hidden layers to an artificial neural network increases significantly its ability to generalise its behaviour to unseen scenarios outside the domain in which it was trained.&lt;/p&gt;
 

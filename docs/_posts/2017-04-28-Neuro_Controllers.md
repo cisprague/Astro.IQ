@@ -39,8 +39,8 @@ def Random_Initial_States(model, mxstep=10., nstates=5000.):
 
 The random walks of initial states, within the position and velocity boundaries of a lander, are shown below.
 
-![Initial States Position]({{site.baseurl}}/assets/Neuro_Control/Mars_Init_States_r.svg)
-![Initial States Velocities]({{site.baseurl}}/assets/Neuro_Control/Mars_Init_States_v.svg)
+![Initial States Position]({{site.baseurl}}/assets/Neuro_Control/Mars_Init_States_r.png)
+![Initial States Velocities]({{site.baseurl}}/assets/Neuro_Control/Mars_Init_States_v.png)
 
 From the generated sequence of initial states, generated in order of similarity through the random walk within bounds, the methods of trajectory optimisation may be employed from each initial state. The optimisation process quickly converges from each subsequent initial state due to their similarities as explained by homotopy. Through this process, a very large database of optimal trajectories can be generated from various initial states.
 
@@ -129,8 +129,8 @@ This algorithm is often regarded as state of the art in comparison to the back p
 
 at a nominal learning rate of $$\alpha=1\times10^{-2}$$ and $$\alpha=1\times10^{-4}$$.
 
-![20x2 Training]({{site.baseurl}}/assets/Neuro_Control/Training_Loss_2.svg)
-![20x4 Training]({{site.baseurl}}/assets/Neuro_Control/Training_Loss_4.svg)
+![20x2 Training]({{site.baseurl}}/assets/Neuro_Control/Training_Loss_2.png)
+![20x4 Training]({{site.baseurl}}/assets/Neuro_Control/Training_Loss_4.png)
 
 Indeed, it is seen that if the learning rate is set too greedily, the training convergence of the cost minimisation becomes rather noisy, hence improvement is seen with a more conservative learning rate. Despite this distinction, although a lower learning rate further encourages convergence to the true optimal network parameters, it does however result in a longer training duration, making it infeasible for many domestic computing apparatuses.
 
@@ -202,10 +202,10 @@ for si in test_si:
 
 In verifying the success of each neural network to optimally control the trajectory of a dynamical system, random initial states are typically selected within the 5% dilated box-bounded region in which the training initial states were generated from. From the randomly selected initial states the dynamics of the system are then propagated with the control mapping enforced by the implemented neural network. Ten neuro-controlled trajectories are shown for the $$20\times2$$ and $$20\times4$$ neural networks in regard to position and thrust throttle profile.
 
-![20x2 Neuro-Controlled Trajectory]({{site.baseurl}}/assets/Neuro_Control/20x2_Traj.svg)
-![20x2 Neuro-Controlled Throttle]({{site.baseurl}}/assets/Neuro_Control/20x2_Throttle.svg)
-![20x4 Neuro-Controlled Trajectory]({{site.baseurl}}/assets/Neuro_Control/20x4_Traj.svg)
-![20x4 Neuro-Controlled Throttle]({{site.baseurl}}/assets/Neuro_Control/20x4_Throttle.svg)
+![20x2 Neuro-Controlled Trajectory]({{site.baseurl}}/assets/Neuro_Control/20x2_Traj.png)
+![20x2 Neuro-Controlled Throttle]({{site.baseurl}}/assets/Neuro_Control/20x2_Throttle.png)
+![20x4 Neuro-Controlled Trajectory]({{site.baseurl}}/assets/Neuro_Control/20x4_Traj.png)
+![20x4 Neuro-Controlled Throttle]({{site.baseurl}}/assets/Neuro_Control/20x4_Throttle.png)
 
 Indeed, it is quite easily seen that the $20\times4$ network is superior to the $$20\times2$$ network in performance. Not only is this evidenced by the network's regression of the training database, but more importantly by its performance with respect to its dynamic implementation as a real-time controller. The difference between the control profile generated from the $$20\times2$$ network and the $$20\times4$$ network is revealing; the $$20\times4$$ network is more accurately able to replicate the *bang-bang* optimal control profile that was to be expected in accordance to optimal control theory. This is unsurprising as it is widely indicated in the field of machine learning that the addition of extra hidden layers to an artificial neural network increases significantly its ability to generalise its behaviour to unseen scenarios outside the domain in which it was trained.
 
